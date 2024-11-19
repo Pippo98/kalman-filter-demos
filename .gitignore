@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+.cache
+compile_commands.json
+
+bin/
+debug/
+release/
+build/
+lib/
+.last_compilation_mode
