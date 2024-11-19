@@ -1,3 +1,5 @@
+message("-- [CORE]")
+
 set(CDIR ${CMAKE_CURRENT_LIST_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIR}/bin/core)
 
@@ -15,5 +17,5 @@ target_sources(demos
 add_executable(kalman-filter_demos
     ${CDIR}/executables/kf/main.cpp
 )
-target_link_libraries(kalman-filter_demos demos)
+target_link_libraries(kalman-filter_demos demos imgui implot)
 
