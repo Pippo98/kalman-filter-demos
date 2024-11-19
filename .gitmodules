@@ -1,0 +1,10 @@
+[submodule "external/kflib"]
+	path = external/kflib
+	url = git@github.com:Pippo98/kflib.git
+[submodule "external/imgui"]
+	path = external/imgui
+	url = git@github.com:ocornut/imgui.git
+	branch = docking
+[submodule "external/implot"]
+	path = external/implot
+	url = git@github.com:epezent/implot.git
