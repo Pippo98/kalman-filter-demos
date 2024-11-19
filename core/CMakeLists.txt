@@ -7,6 +7,13 @@ include_directories(
   ${CDIR}/src
 )
 
+add_library(app SHARED)
+target_sources(app
+  PRIVATE
+    ${CDIR}/src/app/app.cpp
+)
+target_link_libraries(app PUBLIC imgui implot)
+
 add_library(demos SHARED)
 target_sources(demos
   PRIVATE
@@ -17,5 +24,5 @@ target_sources(demos
 add_executable(kalman-filter_demos
     ${CDIR}/executables/kf/main.cpp
 )
-target_link_libraries(kalman-filter_demos demos imgui implot)
+target_link_libraries(kalman-filter_demos demos app)
 

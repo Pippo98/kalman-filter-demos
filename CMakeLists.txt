@@ -23,4 +23,5 @@ include_directories(
 )
 
 add_subdirectory(${DIR}/external)
+include_directories(PUBLIC ${EXTERNAL_DIRS})
 add_subdirectory(${DIR}/core)
