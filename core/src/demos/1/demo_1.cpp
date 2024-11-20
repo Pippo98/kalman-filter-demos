@@ -25,7 +25,7 @@ void Demo1::draw() {
   }
   if (!realStates.empty() &&
       ImPlot::BeginPlot("1D Cart position", ImVec2(-1, 0))) {
-    ImPlot::SetupAxes("Time", "x", ImPlotAxisFlags_AutoFit,
+    ImPlot::SetupAxes("position", "time", ImPlotAxisFlags_AutoFit,
                       ImPlotAxisFlags_AutoFit);
 
     ImPlot::SetupAxisLimits(ImAxis_X1, -1, realStates[1].back().value + 2,

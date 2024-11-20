@@ -3,6 +3,8 @@ message("-- [CORE]")
 set(CDIR ${CMAKE_CURRENT_LIST_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DIR}/bin/core)
 
+configure_file(${CDIR}/src/defines.hpp.in ${CDIR}/src/defines.hpp)
+
 include_directories(
   ${CDIR}/src
 )

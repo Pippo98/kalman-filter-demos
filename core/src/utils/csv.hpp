@@ -7,8 +7,9 @@
 #include "type_and_name.hpp"
 #include "raii_file.hpp"
 
-void drawCSVTable(const char *id, const std::vector<std::vector<Real>> &values,
-                  ImVec2 size) {
+inline void drawCSVTable(const char *id,
+                         const std::vector<std::vector<Real>> &values,
+                         ImVec2 size) {
   if (!values.empty() &&
       ImGui::BeginTable(id, values.size(), ImGuiTableFlags_ScrollY, size)) {
     for (const auto &col : values) {

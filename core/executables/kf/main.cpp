@@ -4,6 +4,7 @@
 #include "core/executables/kf/main_menu.hpp"
 #include "demos/1/demo_1.hpp"
 #include "app/app.hpp"
+#include "demos/2/demo_2.hpp"
 #include "imgui.h"
 #include "utils/time_base.hpp"
 
@@ -13,9 +14,10 @@ int main(void) {
   app.Open();
 
   std::shared_ptr<Demo1> demo1 = std::make_shared<Demo1>();
+  std::shared_ptr<Demo2> demo2 = std::make_shared<Demo2>();
 
   Simulator simulator;
-  simulator.setSystems({demo1});
+  simulator.setSystems({demo1, demo2});
 
   MainMenu mainMenu;
 
@@ -32,7 +34,17 @@ int main(void) {
     }
 
     if (ImGui::Begin("Demos", nullptr)) {
-      demo1->draw();
+      if (ImGui::BeginTabBar("Demos tabs")) {
+        if (ImGui::BeginTabItem("Demo 1")) {
+          demo1->draw();
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Demo 2")) {
+          demo2->draw();
+          ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+      }
     }
     ImGui::End();
 

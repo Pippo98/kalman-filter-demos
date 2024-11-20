@@ -1,0 +1,7 @@
+#pragma once
+
+#define CONST_G -9.81
+#define CONST_TO_RAD (M_PI / 180.0)
+#define CONST_TO_DEG (1.0 / CONST_TO_RAD)
+
+#define CONST_CART_MASS 10.0

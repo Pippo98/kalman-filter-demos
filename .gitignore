@@ -40,3 +40,4 @@ release/
 build/
 lib/
 .last_compilation_mode
+core/src/defines.hpp
