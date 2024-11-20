@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <memory>
 
+#include "core/executables/kf/main_menu.hpp"
 #include "demos/1/demo_1.hpp"
 #include "app/app.hpp"
 #include "imgui.h"
@@ -16,16 +17,24 @@ int main(void) {
   Simulator simulator;
   simulator.setSystems({demo1});
 
-  double lastTime = TimeBase::getTimestampSeconds();
+  MainMenu mainMenu;
 
+  double lastTime = TimeBase::getTimestampSeconds();
   while (app.IsOpen()) {
     app.BeginFrame();
 
-    if (TimeBase::getTimestampSeconds() - lastTime > 0.05) {
+    mainMenu.draw(simulator);
+
+    if (TimeBase::getTimestampSeconds() - lastTime >=
+        1.0 / mainMenu.getSimulationFrequency()) {
       simulator.step();
       lastTime = TimeBase::getTimestampSeconds();
     }
-    demo1->draw();
+
+    if (ImGui::Begin("Demos", nullptr)) {
+      demo1->draw();
+    }
+    ImGui::End();
 
     app.EndFrame();
   }

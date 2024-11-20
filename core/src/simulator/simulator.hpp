@@ -17,6 +17,8 @@ class Simulator {
   void step(double dt);
   void step();
 
+  void resetTime();
+
  private:
   double time;
   std::vector<std::shared_ptr<Simulatable>> systems;

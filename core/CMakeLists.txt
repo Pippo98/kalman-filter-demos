@@ -30,6 +30,7 @@ target_link_libraries(demos PUBLIC kflib)
 
 add_executable(kalman-filter_demos
     ${CDIR}/executables/kf/main.cpp
+    ${CDIR}/executables/kf/main_menu.cpp
 )
 target_link_libraries(kalman-filter_demos demos app simulator)
 

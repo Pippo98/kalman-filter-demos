@@ -18,3 +18,4 @@ void Simulator::step(double dt) {
     sim->step(dt);
   }
 }
+void Simulator::resetTime() { time = TimeBase::getTimestampSeconds(); }
