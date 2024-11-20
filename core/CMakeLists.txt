@@ -14,12 +14,19 @@ target_sources(app
 )
 target_link_libraries(app PUBLIC imgui implot)
 
+add_library(simulator SHARED)
+target_sources(simulator
+  PRIVATE
+    ${CDIR}/src/simulator/simulator.cpp
+)
+
 add_library(demos SHARED)
 target_sources(demos
   PRIVATE
     ${CDIR}/src/demos/1/demo_1.cpp
     ${CDIR}/src/demos/2/demo_2.cpp
 )
+target_link_libraries(demos PUBLIC kflib)
 
 add_executable(kalman-filter_demos
     ${CDIR}/executables/kf/main.cpp
