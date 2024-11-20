@@ -11,10 +11,15 @@ inline void drawCSVTable(const char *id,
                          const std::vector<std::vector<Real>> &values,
                          ImVec2 size) {
   if (!values.empty() &&
-      ImGui::BeginTable(id, values.size(), ImGuiTableFlags_ScrollY, size)) {
+      ImGui::BeginTable(id, values.size(),
+                        ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg |
+                            ImGuiTableFlags_Borders |
+                            ImGuiTableFlags_HighlightHoveredColumn,
+                        size)) {
     for (const auto &col : values) {
       ImGui::TableSetupColumn(col.front().name.c_str());
     }
+    ImGui::TableSetupScrollFreeze(values.size(), 1);
     ImGui::TableHeadersRow();
 
     auto rows = values.front().size();

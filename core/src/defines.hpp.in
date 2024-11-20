@@ -5,3 +5,8 @@
 #define CONST_TO_DEG (1.0 / CONST_TO_RAD)
 
 #define CONST_CART_MASS 10.0
+
+#define PROJECT_PATH "@CMAKE_SOURCE_DIR@"
+#define RESOURCES_PATH "@CMAKE_SOURCE_DIR@/resources"
+#define FONTS_PATH "@CMAKE_SOURCE_DIR@/resources/fonts"
+#define IMAGES_PATH "@CMAKE_SOURCE_DIR@/resources/images"

@@ -1,6 +1,8 @@
 #include "main_menu.hpp"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "utils/time_base.hpp"
+#include "resources/fonts/font_awesome.h"
 
 void MainMenu::onPausedChanged(Simulator &simulator) {
   paused = !paused;
@@ -15,7 +17,9 @@ void MainMenu::onPausedChanged(Simulator &simulator) {
 
 void MainMenu::draw(Simulator &simulator) {
   if (ImGui::BeginMainMenuBar()) {
-    if (ImGui::Button(paused ? "Resume" : "Pause")) {
+    ImGui::Text("Kalman Filter Demos");
+    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical, 3);
+    if (ImGui::Button(paused ? ICON_FA_PLAY : ICON_FA_PAUSE)) {
       onPausedChanged(simulator);
     }
     ImGui::Text("Simulation frequency");
