@@ -12,10 +12,6 @@ int main(void) {
   while (app.IsOpen()) {
     app.BeginFrame();
 
-    ImGui::Begin("KF");
-    ImGui::Text("--- heellooo");
-    ImGui::End();
-
     app.EndFrame();
   }
   return 0;
