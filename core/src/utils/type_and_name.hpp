@@ -22,11 +22,11 @@ struct Real {
   Real(const char *_name) : Real(_name, 0.0) {};
   Real(const char *_name, double std) : name(_name), noise(0.0, std) {}
 
-  double operator=(const double &val) { return value = val; }
-  double operator+(const double &val) { return value += val; }
-  double operator-(const double &val) { return value -= val; }
-  double operator*(const double &val) { return value *= val; }
-  double operator/(const double &val) { return value /= val; }
+  double operator=(double val) { return value = val; }
+  double operator+(double val) { return value + val; }
+  double operator-(double val) { return value - val; }
+  double operator*(double val) { return value * val; }
+  double operator/(const double &val) { return value / val; }
 
   operator double() const { return value; }
   operator double &() { return value; }
