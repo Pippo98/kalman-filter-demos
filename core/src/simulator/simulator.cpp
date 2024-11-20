@@ -1,4 +1,5 @@
 #include "simulator.hpp"
+#include <cassert>
 #include "utils/time_base.hpp"
 
 Simulator::Simulator() { time = TimeBase::getTimestampSeconds(); }
@@ -13,6 +14,7 @@ void Simulator::step() {
 }
 void Simulator::step(double dt) {
   for (std::shared_ptr<Simulatable> &sim : systems) {
+    assert(sim && "Simulatable not initialized");
     sim->step(dt);
   }
 }
