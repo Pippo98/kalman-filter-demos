@@ -1,3 +1,5 @@
+#pragma once
+
 #include "simulator/simulator.hpp"
 
 class Cart1D : public Simulatable {

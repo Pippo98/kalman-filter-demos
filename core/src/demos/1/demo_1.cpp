@@ -2,28 +2,7 @@
 #include <memory>
 #include "imgui.h"
 #include "implot.h"
-
-void drawCSVTable(const char *id, const std::vector<std::vector<Real>> &values,
-                  ImVec2 size) {
-  if (!values.empty() &&
-      ImGui::BeginTable(id, values.size(), ImGuiTableFlags_ScrollY, size)) {
-    for (const auto &col : values) {
-      ImGui::TableSetupColumn(col.front().name.c_str());
-    }
-    ImGui::TableHeadersRow();
-
-    auto rows = values.front().size();
-    for (size_t row = 0; row < rows; row++) {
-      ImGui::TableNextRow();
-      for (size_t col = 0; col < values.size(); col++) {
-        ImGui::TableNextColumn();
-        ImGui::Text("%0.3f\n", values[col][rows - row - 1].value);
-      }
-    }
-
-    ImGui::EndTable();
-  }
-}
+#include "utils/csv.hpp"
 
 Demo1::Demo1() {}
 void Demo1::draw() {

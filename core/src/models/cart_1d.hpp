@@ -1,3 +1,5 @@
+#pragma once
+
 #include "simulator/simulator.hpp"
 #include "utils/type_and_name.hpp"
 
