@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdio>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
@@ -40,12 +42,15 @@ class CSV {
   bool open(const std::string &path, const std::string &openMode) {
     csv = std::unique_ptr<FILE, FileCloser>(
         fopen(path.c_str(), openMode.c_str()));
-    firstLine = true;
+    header.clear();
     return csv.get() != nullptr;
   }
-  void write(const std::vector<Real> &values) {
+  void close() { csv = nullptr; }
+  void writeLine(const std::vector<Real> &values) {
     assert(csv && "File not opened");
-    if (firstLine) {
+    assert(!values.empty() && "Empty line");
+    if (header.empty()) {
+      header = values;
       for (size_t i = 0; i < values.size(); i++) {
         if (i != values.size() - 1) {
           fprintf(csv.get(), "%s,", values[i].name.c_str());
@@ -62,8 +67,42 @@ class CSV {
       }
     }
   }
+  std::vector<Real> readLine() {
+    assert(csv && "File not opened");
+    std::vector<Real> row;
+    std::string cell;
+    cell.reserve(100);
+    size_t column = 0;
+    if (!header.empty()) {
+      row = header;
+    }
+    while (true) {
+      char c = fgetc(csv.get());
+      if (c <= 0 || c == '\n') {
+        break;
+      }
+      if (c == ',') {
+        if (header.empty()) {
+          row.push_back(Real(cell.c_str()));
+        } else {
+          row[column].value = std::strtod(cell.c_str(), nullptr);
+        }
+        column++;
+        cell.clear();
+      } else {
+        cell += c;
+      }
+    }
+    if (header.empty()) {
+      header = row;
+    }
+    if (column != header.size()) {
+      row.clear();
+    }
+    return row;
+  }
 
  private:
-  bool firstLine;
+  std::vector<Real> header;
   RAIIFile csv;
 };
