@@ -6,6 +6,7 @@
 #include "app/app.hpp"
 #include "demos/2/demo_2.hpp"
 #include "imgui.h"
+#include "simulator/simulation_manager.hpp"
 #include "utils/time_base.hpp"
 #include "utils/styles.hpp"
 #include "resources/fonts/font_awesome.h"
@@ -32,6 +33,9 @@ int main(void) {
   Simulator simulator;
   simulator.setSystems({demo1, demo2});
 
+  SimulationManager simulationManager;
+  simulationManager.simulateAll(1 / 50.0, 10.0);
+
   MainMenu mainMenu;
 
   double lastTime = TimeBase::getTimestampSeconds();
@@ -49,11 +53,11 @@ int main(void) {
     if (ImGui::Begin("Demos", nullptr)) {
       if (ImGui::BeginTabBar("Demos tabs")) {
         if (ImGui::BeginTabItem("Demo 1")) {
-          demo1->draw();
+          demo1->draw(simulationManager.getByName("Cart 1D"));
           ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Demo 2")) {
-          demo2->draw();
+          demo2->draw(simulationManager.getByName("Cart 2D"));
           ImGui::EndTabItem();
         }
         ImGui::EndTabBar();

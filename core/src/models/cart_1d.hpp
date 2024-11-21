@@ -6,7 +6,7 @@
 
 class Cart1D : public Simulatable {
  public:
-  Cart1D(double x0, double u0) {
+  void setIC(double x0, double u0) {
     t = 0.0;
     x = x0;
     u = u0;
@@ -17,12 +17,9 @@ class Cart1D : public Simulatable {
     // u = u;
   }
 
-  std::vector<Real> getValues() const { return {t, x, u}; }
-  std::vector<Real> getValuesWithNoise() const {
-    return {t, x.getWithNoise(), u.getWithNoise()};
-  }
-
  private:
+  std::vector<Real *> getValuesPtr() override { return {&t, &x, &u}; }
+
   REAL_TYPE(t, 0.0);
   REAL_TYPE(x, 0.1);
   REAL_TYPE(u, 0.01);

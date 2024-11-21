@@ -2,23 +2,16 @@
 
 #include "external/kflib/src/ukf.hpp"
 #include "models/cart_2d.hpp"
+#include "simulator/simulation_manager.hpp"
 #include "utils/utils.hpp"
 
 class Demo2 : public Simulatable {
  public:
   Demo2();
 
-  void draw();
-
-  virtual void step(double dt) final {
-    cart.step(dt);
-    rowToMatrix(realStates, cart.getValues());
-    rowToMatrix(measuredStates, cart.getValuesWithNoise());
-  }
+  virtual void step(double dt [[maybe_unused]]) final {};
+  void draw(SimulationData &cart);
 
  private:
-  Cart2D cart{0.0, 5.0, 1.0};
-
-  StatesValues realStates;
-  StatesValues measuredStates;
+  std::vector<Real *> getValuesPtr() override { return std::vector<Real *>(); }
 };

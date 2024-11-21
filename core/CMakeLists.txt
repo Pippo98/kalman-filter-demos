@@ -20,6 +20,7 @@ add_library(simulator SHARED)
 target_sources(simulator
   PRIVATE
     ${CDIR}/src/simulator/simulator.cpp
+    ${CDIR}/src/simulator/simulation_manager.cpp
 )
 
 add_library(demos SHARED)

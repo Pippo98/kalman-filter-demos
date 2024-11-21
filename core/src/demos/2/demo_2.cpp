@@ -3,28 +3,33 @@
 #include <memory>
 #include "imgui.h"
 #include "implot.h"
+#include "models/cart_2d.hpp"
+#include "simulator/simulation_manager.hpp"
 #include "utils/csv.hpp"
 
 Demo2::Demo2() {}
-void Demo2::draw() {
+void Demo2::draw(SimulationData &sim) {
+  Cart2D &cart = *dynamic_cast<Cart2D *>(sim.simulatable);
   ImVec2 reg = ImGui::GetContentRegionAvail();
-  drawCSVTable("real", realStates, ImVec2(reg.x / 2.0, reg.y / 5.0));
+  drawCSVTable("real", sim.simulation.data, ImVec2(reg.x / 2.0, reg.y / 5.0));
   ImGui::SameLine();
-  drawCSVTable("measured", measuredStates, ImVec2(reg.x / 2.0, reg.y / 5.0));
+  drawCSVTable("measured", sim.simulation.dataWithNoise,
+               ImVec2(reg.x / 2.0, reg.y / 5.0));
 
   reg = ImGui::GetContentRegionAvail();
-  if (!realStates.empty() &&
+  if (!sim.simulation.data.empty() &&
       ImPlot::BeginPlot("2D Cart position", reg, ImPlotFlags_Equal)) {
     ImPlot::SetupAxes("x", "y", ImPlotAxisFlags_AutoFit,
                       ImPlotAxisFlags_AutoFit);
 
-    ImPlot::PlotLine("x", &realStates[1].front().value,
-                     &realStates[2].front().value, realStates.front().size(), 0,
-                     0, sizeof(Real));
+    ImPlot::PlotLine("x", &sim.simulation.data[1].front().value,
+                     &sim.simulation.data[2].front().value,
+                     sim.simulation.data.front().size(), 0, 0, sizeof(Real));
 
-    ImPlot::PlotScatter("x measured", &measuredStates[1].front().value,
-                        &measuredStates[2].front().value,
-                        measuredStates.front().size(), 0, 0, sizeof(Real));
+    ImPlot::PlotScatter(
+        "x measured", &sim.simulation.dataWithNoise[1].front().value,
+        &sim.simulation.dataWithNoise[2].front().value,
+        sim.simulation.dataWithNoise.front().size(), 0, 0, sizeof(Real));
 
     ImVec2 groundPoints[3] = {{0.0, 5.0},
                               {10.0, 5.0},
