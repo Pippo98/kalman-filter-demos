@@ -34,7 +34,7 @@ int main(void) {
   simulator.setSystems({demo1, demo2});
 
   SimulationManager simulationManager;
-  simulationManager.simulateAll(1 / 50.0, 10.0);
+  simulationManager.simulateAll(1 / 50.0, 20.0);
 
   MainMenu mainMenu;
 

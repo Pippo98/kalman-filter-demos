@@ -31,6 +31,8 @@ class SimulationManager {
   std::vector<SimulationData> simulations;
   std::map<std::string, size_t> nameToIndex;
 
+  void setParams();
+
  public:
   SimulationManager();
 

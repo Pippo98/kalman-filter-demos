@@ -6,14 +6,7 @@
 
 class Cart2D : public Simulatable {
  public:
-  void setIC(double x0, double y0, double u0) {
-    t = 0.0;
-    x = x0;
-    y = y0;
-    u = u0;
-    w = 0.0;
-    alpha = 10.0 * CONST_TO_RAD;
-  }
+  Cart2D() { alpha = 10.0 * CONST_TO_RAD; }
   virtual void step(double dt) final {
     t = t + dt;
     double ax = 0.0;

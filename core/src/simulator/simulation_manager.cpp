@@ -44,7 +44,7 @@ SimulationManager::SimulationManager() {
         .simulation = Simulation("Cart 2D"),
         .params = {
             {"x", 0.0},
-            {"y", 0.0},
+            {"y", 5.0},
             {"u", 1.0}
         }
     }
@@ -53,9 +53,23 @@ SimulationManager::SimulationManager() {
         nameToIndex[simulations[i].simulation.name] = i;
     }
   // clang-format on
+
+  setParams();
+}
+void SimulationManager::setParams() {
+  for (auto &simulation : simulations) {
+    simulation.simulatable->setValueByName("t", 0.0);
+    for (const auto &[name, value] : simulation.params) {
+      simulation.simulatable->setValueByName(name, value);
+    }
+  }
 }
 void SimulationManager::reset() {}
 void SimulationManager::simulateAll(double dt, double T) {
+  for (auto &sim : simulations) {
+    sim.simulation.data.clear();
+    sim.simulation.dataWithNoise.clear();
+  }
   for (double t = 0.0; t < T; t += dt) {
     for (auto &sim : simulations) {
       sim.simulatable->step(dt);

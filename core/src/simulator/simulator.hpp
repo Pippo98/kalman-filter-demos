@@ -8,6 +8,14 @@
 class Simulatable {
  public:
   virtual void step(double dt) = 0;
+
+  void setValueByName(const std::string &name, double value) {
+    for (auto &ptr : getValuesPtr()) {
+      if (ptr->name == name) {
+        ptr->value = value;
+      }
+    }
+  }
   std::vector<Real> getValues() {
     auto ptrs = getValuesPtr();
     std::vector<Real> ret;
@@ -19,7 +27,7 @@ class Simulatable {
   std::vector<Real> getValuesWithNoise() {
     auto vals = getValues();
     for (auto &val : vals) {
-      val.addNoise();
+      val = val.getWithNoise();
     }
     return vals;
   }
