@@ -10,3 +10,5 @@
 #define RESOURCES_PATH "@CMAKE_SOURCE_DIR@/resources"
 #define FONTS_PATH "@CMAKE_SOURCE_DIR@/resources/fonts"
 #define IMAGES_PATH "@CMAKE_SOURCE_DIR@/resources/images"
+
+#define CSV_OUT_PATH "@CMAKE_SOURCE_DIR@/csv_out/"

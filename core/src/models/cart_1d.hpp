@@ -7,6 +7,7 @@
 class Cart1D : public Simulatable {
  public:
   Cart1D(double x0, double u0) {
+    t = 0.0;
     x = x0;
     u = u0;
   }

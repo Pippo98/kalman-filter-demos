@@ -41,3 +41,4 @@ build/
 lib/
 .last_compilation_mode
 core/src/defines.hpp
+csv_out/

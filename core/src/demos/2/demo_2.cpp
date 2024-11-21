@@ -12,32 +12,26 @@ void Demo2::draw() {
   ImGui::SameLine();
   drawCSVTable("measured", measuredStates, ImVec2(reg.x / 2.0, reg.y / 5.0));
 
-  // if (!realStates.empty() && ImPlot::BeginPlot("1D Cart", ImVec2(-1, 0))) {
-  //   ImPlot::SetupAxes("x", "y", ImPlotAxisFlags_AutoFit,
-  //                     ImPlotAxisFlags_AutoFit);
-  //   ImVec2 realPos{(float)realStates[1].back().value, 1.0f};
-  //   ImVec2 measuredPos{(float)measuredStates[1].back().value, 1.0f};
-  //   ImPlot::SetupAxisLimits(ImAxis_X1, -1, realPos.x + 2, ImPlotCond_Always);
-  //
-  //   ImPlot::PlotScatter("Real Position", &realPos.x, &realPos.y, 1);
-  //   ImPlot::PlotScatter("Measured Position", &measuredPos.x, &measuredPos.y,
-  //   1);
-  //
-  //   ImPlot::EndPlot();
-  // }
   reg = ImGui::GetContentRegionAvail();
   if (!realStates.empty() &&
       ImPlot::BeginPlot("2D Cart position", reg, ImPlotFlags_Equal)) {
-    ImPlot::SetupAxes("position", "time", ImPlotAxisFlags_AutoFit,
+    ImPlot::SetupAxes("x", "y", ImPlotAxisFlags_AutoFit,
                       ImPlotAxisFlags_AutoFit);
 
     ImPlot::PlotLine("x", &realStates[1].front().value,
                      &realStates[2].front().value, realStates.front().size(), 0,
                      0, sizeof(Real));
 
-    ImPlot::PlotScatter("x measured", &(measuredStates[1].front().value),
+    ImPlot::PlotScatter("x measured", &measuredStates[1].front().value,
                         &measuredStates[2].front().value,
                         measuredStates.front().size(), 0, 0, sizeof(Real));
+
+    ImVec2 groundPoints[3] = {{0.0, 5.0},
+                              {10.0, 5.0},
+                              {float(10.0 + 30.0 * std::cos(cart.alpha)),
+                               float(5.0 - 30 * std::sin(cart.alpha))}};
+    ImPlot::PlotLine("ground", &groundPoints[0].x, &groundPoints[0].y, 3, 0, 0,
+                     sizeof(ImVec2));
     ImPlot::EndPlot();
   }
 }
