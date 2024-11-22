@@ -52,10 +52,12 @@ class CSV {
     if (header.empty()) {
       header = values;
       for (size_t i = 0; i < values.size(); i++) {
+        fprintf(csv.get(), "%s@%f", values[i].name.c_str(),
+                values[i].noise.stddev());
         if (i != values.size() - 1) {
-          fprintf(csv.get(), "%s,", values[i].name.c_str());
+          fprintf(csv.get(), ",");
         } else {
-          fprintf(csv.get(), "%s\n", values[i].name.c_str());
+          fprintf(csv.get(), "\n");
         }
       }
     }
@@ -78,17 +80,26 @@ class CSV {
     }
     while (true) {
       char c = fgetc(csv.get());
-      if (c <= 0 || c == '\n') {
+      if (c <= 0) {
         break;
       }
-      if (c == ',') {
+      if (c == ',' || c == '\n') {
         if (header.empty()) {
-          row.push_back(Real(cell.c_str()));
+          auto pos = cell.find('@');
+          assert(pos != std::string::npos);
+          std::string name = cell.substr(0, pos);
+          std::string stdStr = cell.substr(pos + 1);
+          row.push_back(
+              Real(name.c_str(), std::strtod(stdStr.c_str(), nullptr)));
         } else {
           row[column].value = std::strtod(cell.c_str(), nullptr);
         }
         column++;
         cell.clear();
+
+        if (c == '\n') {
+          break;
+        }
       } else {
         cell += c;
       }

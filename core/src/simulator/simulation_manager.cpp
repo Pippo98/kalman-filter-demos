@@ -11,13 +11,20 @@ void loadSimulation(Simulation &simulation) {
     assert(false && "Cannot open file");
   }
   simulation.data.clear();
+  simulation.dataWithNoise.clear();
   auto line = csv.readLine();
   while (true) {
     line = csv.readLine();
     if (line.empty()) {
       break;
     }
-    simulation.data.push_back(line);
+    rowToMatrix(simulation.data, line);
+    for (size_t col = 0; col < line.size(); col++) {
+      if (simulation.dataWithNoise.size() != line.size()) {
+        simulation.dataWithNoise.resize(line.size());
+      }
+      simulation.dataWithNoise[col].push_back(line[col].getWithNoise());
+    }
   }
 }
 void storeSimulation(Simulation &simulation) {
@@ -25,8 +32,17 @@ void storeSimulation(Simulation &simulation) {
   if (!csv.open(simulation.getCSVPath(), "w")) {
     assert(false && "Cannot open file");
   }
-  for (const auto &row : simulation.data) {
-    csv.writeLine(row);
+  assert(!simulation.data.empty() && "Data empty");
+  size_t cols = simulation.data.size();
+  size_t rows = simulation.data[0].size();
+  std::vector<Real> rowValues;
+  rowValues.reserve(cols);
+  for (size_t row = 0; row < rows; row++) {
+    for (size_t col = 0; col < cols; col++) {
+      rowValues.push_back(simulation.data[col][row]);
+    }
+    csv.writeLine(rowValues);
+    rowValues.clear();
   }
 }
 
@@ -158,6 +174,7 @@ void SimulationManager::draw() {
         ImGui::SeparatorText("Data");
         if (ImGui::Button("Save simulation")) {
           storeSimulation(simulation.simulation);
+          loadSimulation(simulation.simulation);
         }
 
         ImVec2 reg = ImGui::GetContentRegionAvail();

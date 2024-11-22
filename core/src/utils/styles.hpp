@@ -1,6 +1,7 @@
 #pragma once
 
 #include "imgui.h"
+#include "implot.h"
 inline void Dracula() {
   auto &colors = ImGui::GetStyle().Colors;
   colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.1f, 0.13f, 1.0f};
@@ -76,4 +77,7 @@ inline void Dracula() {
   style.FrameRounding = 3;
   style.PopupRounding = 4;
   style.ChildRounding = 4;
+
+  auto &ipStyle = ImPlot::GetStyle();
+  ipStyle.FitPadding = {0.1, 0.1};
 }
