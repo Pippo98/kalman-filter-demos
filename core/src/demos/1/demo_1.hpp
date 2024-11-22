@@ -16,8 +16,12 @@ class Demo1 : public Simulatable {
   std::vector<Real *> getValuesPtr() override { return std::vector<Real *>(); }
 
   void runKF(SimulationData &sim);
+  void setupKF();
 
-  bool ukf1Simulated;
-  UnscentedKalmanFilter ukf1;
-  std::vector<std::vector<double>> ukf1States;
+  bool ukfSimulated;
+  size_t lastSimCount = 0;
+  UnscentedKalmanFilter ukfPositionOnly;
+  std::vector<std::vector<double>> ukfPositionOnlyStates;
+  UnscentedKalmanFilter ukfPositionAndSpeed;
+  std::vector<std::vector<double>> ukfPositionAndSpeedStates;
 };

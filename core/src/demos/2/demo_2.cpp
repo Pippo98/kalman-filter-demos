@@ -12,7 +12,6 @@ void Demo2::draw(SimulationData &sim) {
   Cart2D &cart = *dynamic_cast<Cart2D *>(sim.simulatable);
   ImVec2 reg = ImGui::GetContentRegionAvail();
 
-  reg = ImGui::GetContentRegionAvail();
   if (!sim.simulation.data.empty() &&
       ImPlot::BeginPlot("2D Cart position", reg, ImPlotFlags_Equal)) {
     ImPlot::SetupAxes("x", "y", ImPlotAxisFlags_AutoFit,

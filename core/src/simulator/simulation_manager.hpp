@@ -23,6 +23,9 @@ struct SimulationData {
   Simulatable *simulatable;
   Simulation simulation;
   std::vector<Real> params;
+
+  size_t simCount = 0;
+
   SimulationData() {};
   template <class Model>
   SimulationData(const std::string &name, Model &model) {

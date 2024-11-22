@@ -79,6 +79,7 @@ void SimulationManager::simulateAll() {
   for (auto &sim : simulations) {
     sim.simulation.data.clear();
     sim.simulation.dataWithNoise.clear();
+    sim.simCount++;
   }
   for (double t = 0.0; t < T; t += dt) {
     for (auto &sim : simulations) {
@@ -93,6 +94,7 @@ void SimulationManager::simulateOne(size_t idx) {
   SimulationData &sim = simulations[idx];
   sim.simulation.data.clear();
   sim.simulation.dataWithNoise.clear();
+  sim.simCount++;
   for (double t = 0.0; t < T; t += dt) {
     sim.simulatable->step(dt);
     rowToMatrix(sim.simulation.data, sim.simulatable->getValues());
