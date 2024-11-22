@@ -45,15 +45,15 @@ SimulationManager::SimulationManager() {
 }
 void SimulationManager::setParams(size_t idx) {
   simulations[idx].simulatable->setValueByName("t", 0.0);
-  for (const auto &param : simulations[idx].params) {
-    simulations[idx].simulatable->setValueByName(param.name, param.value);
+  for (const auto &[name, value, _] : simulations[idx].params) {
+    simulations[idx].simulatable->setValueByName(name, value);
   }
 }
 void SimulationManager::setAllParams() {
   for (auto &simulation : simulations) {
     simulation.simulatable->setValueByName("t", 0.0);
-    for (const auto &param : simulation.params) {
-      simulation.simulatable->setValueByName(param.name, param.value);
+    for (const auto &[name, value, _] : simulation.params) {
+      simulation.simulatable->setValueByName(name, value);
     }
   }
 }
@@ -126,16 +126,15 @@ void SimulationManager::draw() {
                                simulation.simulation.name)
                                   .c_str())) {
         ImGui::SeparatorText("States Initial Conditions");
-        for (auto &param : simulation.params) {
-          if (param.name == "t") {
+        for (auto &[name, value, _] : simulation.params) {
+          if (name == "t") {
             continue;
           }
-          float valueFloat = param.value;
+          float valueFloat = value;
 
-          if (ImGui::SliderFloat(param.name.c_str(), &valueFloat, -10.0,
-                                 10.0)) {
+          if (ImGui::SliderFloat(name.c_str(), &valueFloat, -10.0, 10.0)) {
             simulationChangedIdx = simulationIdx;
-            param.value = valueFloat;
+            value = valueFloat;
           }
         }
         ImGui::SeparatorText("Model Parameters");
