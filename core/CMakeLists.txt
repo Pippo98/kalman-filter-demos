@@ -28,6 +28,7 @@ target_sources(demos
   PRIVATE
     ${CDIR}/src/demos/1/demo_1.cpp
     ${CDIR}/src/demos/2/demo_2.cpp
+    ${CDIR}/src/demos/3/demo_3.cpp
 )
 target_link_libraries(demos PUBLIC kflib)
 

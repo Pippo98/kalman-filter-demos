@@ -1,26 +1,24 @@
 #pragma once
 
 #include "simulator/simulator.hpp"
-#include "utils/time_base.hpp"
 #include "utils/type_and_name.hpp"
 
 class Cart1D : public Simulatable {
  public:
-  void setIC(double x0, double u0) {
+  Cart1D() {
     t = 0.0;
-    x = x0;
-    u = u0;
+    x = 0.0;
+    vx = 1.0;
   }
   virtual void step(double dt) final {
     t = t + dt;
-    x = x + u * dt;
-    // u = u;
+    x = x + vx * dt;
   }
 
  private:
-  std::vector<Real *> getValuesPtr() override { return {&t, &x, &u}; }
+  std::vector<Real *> getValuesPtr() override { return {&t, &x, &vx}; }
 
   REAL_TYPE(t, 0.0);
   REAL_TYPE(x, 0.1);
-  REAL_TYPE(u, 0.01);
+  REAL_TYPE(vx, 0.01);
 };

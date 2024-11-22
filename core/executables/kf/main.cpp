@@ -5,6 +5,7 @@
 #include "demos/1/demo_1.hpp"
 #include "app/app.hpp"
 #include "demos/2/demo_2.hpp"
+#include "demos/3/demo_3.hpp"
 #include "imgui.h"
 #include "simulator/simulation_manager.hpp"
 #include "utils/time_base.hpp"
@@ -29,9 +30,10 @@ int main(void) {
 
   std::shared_ptr<Demo1> demo1 = std::make_shared<Demo1>();
   std::shared_ptr<Demo2> demo2 = std::make_shared<Demo2>();
+  std::shared_ptr<Demo3> demo3 = std::make_shared<Demo3>();
 
   Simulator simulator;
-  simulator.setSystems({demo1, demo2});
+  simulator.setSystems({demo1, demo2, demo3});
 
   SimulationManager simulationManager;
   simulationManager.simulateAll();
@@ -62,6 +64,10 @@ int main(void) {
         }
         if (ImGui::BeginTabItem("Demo 2")) {
           demo2->draw(simulationManager.getByName("Cart 2D"));
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Demo 3")) {
+          demo3->draw(simulationManager.getByName("Ball"));
           ImGui::EndTabItem();
         }
         ImGui::EndTabBar();

@@ -4,6 +4,7 @@
 #include <variant>
 #include <vector>
 #include "defines.hpp"
+#include "models/ball.hpp"
 #include "models/cart_1d.hpp"
 #include "models/cart_2d.hpp"
 #include "simulator/simulator.hpp"
@@ -51,6 +52,7 @@ class SimulationManager {
 
   Cart1D cart1d;
   Cart2D cart2d;
+  Ball ball;
 
   void reset();
   void simulateAll();

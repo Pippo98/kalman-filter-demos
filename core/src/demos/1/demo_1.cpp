@@ -6,12 +6,6 @@
 
 Demo1::Demo1() {}
 void Demo1::draw(SimulationData& sim) {
-  ImVec2 reg = ImGui::GetContentRegionAvail();
-  drawCSVTable("real", sim.simulation.data, ImVec2(reg.x / 2.0, reg.y / 5.0));
-  ImGui::SameLine();
-  drawCSVTable("measured", sim.simulation.dataWithNoise,
-               ImVec2(reg.x / 2.0, reg.y / 5.0));
-
   if (!sim.simulation.data.empty() &&
       ImPlot::BeginPlot("1D Cart", ImVec2(-1, 0))) {
     ImPlot::SetupAxes("x", "y", ImPlotAxisFlags_AutoFit,

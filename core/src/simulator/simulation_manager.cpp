@@ -35,6 +35,7 @@ SimulationManager::SimulationManager() {
     simulations = {
         {"Cart 1D", cart1d},
         {"Cart 2D", cart2d},
+        {"Ball", ball},
     };
     for(size_t i = 0; i < simulations.size(); i++) {
         nameToIndex[simulations[i].simulation.name] = i;
@@ -100,6 +101,17 @@ bool SimulationManager::drawExtraParams(const std::string &modelName) {
       cart2d.planeInclinationX = inclX;
       changed = true;
     }
+  } else if (modelName == "Ball") {
+    float c = ball.c;
+    if (ImGui::SliderFloat("c", &c, 0.0, 0.05)) {
+      changed = true;
+      ball.c = c;
+    }
+    float Cd = ball.Cd;
+    if (ImGui::SliderFloat("Cd", &Cd, 0.0, 0.05)) {
+      changed = true;
+      ball.Cd = Cd;
+    }
   }
   return changed;
 }
@@ -122,7 +134,8 @@ void SimulationManager::draw() {
     for (size_t simulationIdx = 0; simulationIdx < simulations.size();
          simulationIdx++) {
       SimulationData &simulation = simulations[simulationIdx];
-      if (ImGui::BeginTabItem((std::to_string(simulationIdx) + ") " +
+
+      if (ImGui::BeginTabItem((std::to_string(simulationIdx + 1) + ") " +
                                simulation.simulation.name)
                                   .c_str())) {
         ImGui::SeparatorText("States Initial Conditions");
@@ -132,7 +145,7 @@ void SimulationManager::draw() {
           }
           float valueFloat = value;
 
-          if (ImGui::SliderFloat(name.c_str(), &valueFloat, -10.0, 10.0)) {
+          if (ImGui::InputFloat(name.c_str(), &valueFloat, 0.01, 0.1)) {
             simulationChangedIdx = simulationIdx;
             value = valueFloat;
           }
@@ -141,6 +154,22 @@ void SimulationManager::draw() {
         if (drawExtraParams(simulation.simulation.name)) {
           simulationChangedIdx = simulationIdx;
         }
+
+        ImGui::SeparatorText("Data");
+        if (ImGui::Button("Save simulation")) {
+          storeSimulation(simulation.simulation);
+        }
+
+        ImVec2 reg = ImGui::GetContentRegionAvail();
+        if (ImGui::CollapsingHeader("Simulated Data")) {
+          drawCSVTable("real", simulation.simulation.data,
+                       ImVec2(reg.x, reg.y / 5.0));
+        }
+        if (ImGui::CollapsingHeader("Measured Data")) {
+          drawCSVTable("measured", simulation.simulation.dataWithNoise,
+                       ImVec2(reg.x, reg.y / 5.0));
+        }
+
         ImGui::EndTabItem();
       }
     }
