@@ -33,24 +33,8 @@ void storeSimulation(Simulation &simulation) {
 SimulationManager::SimulationManager() {
   // clang-format off
     simulations = {
-    {
-        .simulatable = &cart1d,
-        .simulation = Simulation("Cart 1D"),
-        .params = {
-            {"x", 0.0},
-            {"u", 1.0}
-        }
-    },
-    {
-        .simulatable = &cart2d,
-        .simulation = Simulation("Cart 2D"),
-        .params = {
-            {"x", 0.0},
-            {"y", 5.0},
-            {"u", 1.0},
-            {"w", 0.0}
-        }
-    }
+        {"Cart 1D", cart1d},
+        {"Cart 2D", cart2d},
     };
     for(size_t i = 0; i < simulations.size(); i++) {
         nameToIndex[simulations[i].simulation.name] = i;
@@ -61,15 +45,15 @@ SimulationManager::SimulationManager() {
 }
 void SimulationManager::setParams(size_t idx) {
   simulations[idx].simulatable->setValueByName("t", 0.0);
-  for (const auto &[name, value] : simulations[idx].params) {
-    simulations[idx].simulatable->setValueByName(name, value);
+  for (const auto &param : simulations[idx].params) {
+    simulations[idx].simulatable->setValueByName(param.name, param.value);
   }
 }
 void SimulationManager::setAllParams() {
   for (auto &simulation : simulations) {
     simulation.simulatable->setValueByName("t", 0.0);
-    for (const auto &[name, value] : simulation.params) {
-      simulation.simulatable->setValueByName(name, value);
+    for (const auto &param : simulation.params) {
+      simulation.simulatable->setValueByName(param.name, param.value);
     }
   }
 }
@@ -102,6 +86,23 @@ void SimulationManager::simulateOne(size_t idx) {
 SimulationData &SimulationManager::getByName(const std::string &name) {
   return simulations[nameToIndex[name]];
 }
+bool SimulationManager::drawExtraParams(const std::string &modelName) {
+  bool changed = false;
+  if (modelName == "Cart 1D") {
+  } else if (modelName == "Cart 2D") {
+    float alpha = cart2d.alpha;
+    if (ImGui::SliderAngle("alpha", &alpha, 0.0, 30.0)) {
+      cart2d.alpha = alpha;
+      changed = true;
+    }
+    float inclX = cart2d.planeInclinationX;
+    if (ImGui::SliderFloat("inclination start X", &inclX, 0.0, 10.0)) {
+      cart2d.planeInclinationX = inclX;
+      changed = true;
+    }
+  }
+  return changed;
+}
 
 void SimulationManager::draw() {
   bool resimulateAll = false;
@@ -124,13 +125,22 @@ void SimulationManager::draw() {
       if (ImGui::BeginTabItem((std::to_string(simulationIdx) + ") " +
                                simulation.simulation.name)
                                   .c_str())) {
-        for (auto &[name, value] : simulation.params) {
-          float valueFloat = value;
-
-          if (ImGui::SliderFloat(name.c_str(), &valueFloat, -10.0, 10.0)) {
-            simulationChangedIdx = simulationIdx;
+        ImGui::SeparatorText("States Initial Conditions");
+        for (auto &param : simulation.params) {
+          if (param.name == "t") {
+            continue;
           }
-          value = valueFloat;
+          float valueFloat = param.value;
+
+          if (ImGui::SliderFloat(param.name.c_str(), &valueFloat, -10.0,
+                                 10.0)) {
+            simulationChangedIdx = simulationIdx;
+            param.value = valueFloat;
+          }
+        }
+        ImGui::SeparatorText("Model Parameters");
+        if (drawExtraParams(simulation.simulation.name)) {
+          simulationChangedIdx = simulationIdx;
         }
         ImGui::EndTabItem();
       }

@@ -31,10 +31,11 @@ void Demo2::draw(SimulationData &sim) {
         &sim.simulation.dataWithNoise[2].front().value,
         sim.simulation.dataWithNoise.front().size(), 0, 0, sizeof(Real));
 
-    ImVec2 groundPoints[3] = {{0.0, 5.0},
-                              {10.0, 5.0},
-                              {float(10.0 + 30.0 * std::cos(cart.alpha)),
-                               float(5.0 - 30 * std::sin(cart.alpha))}};
+    ImVec2 groundPoints[3] = {
+        {0.0, 5.0},
+        {float(cart.planeInclinationX), 5.0},
+        {float(cart.planeInclinationX + 30.0 * std::cos(cart.alpha)),
+         float(5.0 - 30 * std::sin(cart.alpha))}};
     ImPlot::PlotLine("ground", &groundPoints[0].x, &groundPoints[0].y, 3, 0, 0,
                      sizeof(ImVec2));
     ImPlot::EndPlot();

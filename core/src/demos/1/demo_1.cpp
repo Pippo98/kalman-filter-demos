@@ -17,7 +17,8 @@ void Demo1::draw(SimulationData& sim) {
     ImPlot::SetupAxes("x", "y", ImPlotAxisFlags_AutoFit,
                       ImPlotAxisFlags_AutoFit);
     ImVec2 realPos{(float)sim.simulation.data[1].back().value, 1.0f};
-    ImVec2 measuredPos{(float)sim.simulation.data[1].back().value, 1.0f};
+    ImVec2 measuredPos{(float)sim.simulation.dataWithNoise[1].back().value,
+                       1.0f};
     ImPlot::SetupAxisLimits(ImAxis_X1, -1, realPos.x + 2, ImPlotCond_Always);
 
     ImPlot::PlotScatter("Real Position", &realPos.x, &realPos.y, 1);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <variant>
 #include <vector>
 #include "defines.hpp"
 #include "models/cart_1d.hpp"
@@ -20,7 +21,14 @@ class Simulation {
 struct SimulationData {
   Simulatable *simulatable;
   Simulation simulation;
-  std::map<std::string, double> params;
+  std::vector<Real> params;
+  SimulationData() {};
+  template <class Model>
+  SimulationData(const std::string &name, Model &model) {
+    simulatable = &model;
+    simulation.name = name;
+    params = model.getValues();
+  }
 };
 
 void loadSimulation(Simulation &simulation);
@@ -28,11 +36,13 @@ void storeSimulation(Simulation &simulation);
 
 class SimulationManager {
  private:
-  std::vector<SimulationData> simulations;
   std::map<std::string, size_t> nameToIndex;
+  std::vector<SimulationData> simulations;
 
   void setParams(size_t idx);
   void setAllParams();
+  bool drawExtraParams(const std::string &modelName);
+
   double dt = 0.05;
   double T = 20.0;
 
