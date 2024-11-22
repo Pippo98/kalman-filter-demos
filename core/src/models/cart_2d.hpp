@@ -12,6 +12,12 @@ class Cart2D : public Simulatable {
     double ax = 0.0;
     double ay = 0.0;
     if (x.value > 10) {
+      if (!isDescending) {
+        double Vg = u;
+        u = Vg * std::cos(alpha);
+        w = -Vg * std::sin(alpha);
+        isDescending = true;
+      }
       ax = -CONST_G * std::sin(alpha) * std::cos(alpha);
       ay = +CONST_G * std::sin(alpha) * std::sin(alpha);
       u = u + ax * dt;
@@ -22,6 +28,7 @@ class Cart2D : public Simulatable {
   }
 
   double alpha;
+  bool isDescending = false;
 
  private:
   std::vector<Real *> getValuesPtr() override { return {&t, &x, &y, &u, &w}; }

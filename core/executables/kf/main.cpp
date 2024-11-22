@@ -34,7 +34,7 @@ int main(void) {
   simulator.setSystems({demo1, demo2});
 
   SimulationManager simulationManager;
-  simulationManager.simulateAll(1 / 50.0, 20.0);
+  simulationManager.simulateAll();
 
   MainMenu mainMenu;
 
@@ -49,6 +49,11 @@ int main(void) {
       simulator.step();
       lastTime = TimeBase::getTimestampSeconds();
     }
+
+    if (ImGui::Begin("Simulation Manager")) {
+      simulationManager.draw();
+    }
+    ImGui::End();
 
     if (ImGui::Begin("Demos", nullptr)) {
       if (ImGui::BeginTabBar("Demos tabs")) {

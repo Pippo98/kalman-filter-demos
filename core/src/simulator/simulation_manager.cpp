@@ -1,7 +1,9 @@
 #include "simulation_manager.hpp"
+#include "imgui.h"
 #include "utils/csv.hpp"
 #include "utils/utils.hpp"
 #include <cassert>
+#include <string>
 
 void loadSimulation(Simulation &simulation) {
   CSV csv;
@@ -45,7 +47,8 @@ SimulationManager::SimulationManager() {
         .params = {
             {"x", 0.0},
             {"y", 5.0},
-            {"u", 1.0}
+            {"u", 1.0},
+            {"w", 0.0}
         }
     }
     };
@@ -54,9 +57,15 @@ SimulationManager::SimulationManager() {
     }
   // clang-format on
 
-  setParams();
+  setAllParams();
 }
-void SimulationManager::setParams() {
+void SimulationManager::setParams(size_t idx) {
+  simulations[idx].simulatable->setValueByName("t", 0.0);
+  for (const auto &[name, value] : simulations[idx].params) {
+    simulations[idx].simulatable->setValueByName(name, value);
+  }
+}
+void SimulationManager::setAllParams() {
   for (auto &simulation : simulations) {
     simulation.simulatable->setValueByName("t", 0.0);
     for (const auto &[name, value] : simulation.params) {
@@ -65,7 +74,7 @@ void SimulationManager::setParams() {
   }
 }
 void SimulationManager::reset() {}
-void SimulationManager::simulateAll(double dt, double T) {
+void SimulationManager::simulateAll() {
   for (auto &sim : simulations) {
     sim.simulation.data.clear();
     sim.simulation.dataWithNoise.clear();
@@ -79,6 +88,62 @@ void SimulationManager::simulateAll(double dt, double T) {
     }
   }
 }
+void SimulationManager::simulateOne(size_t idx) {
+  SimulationData &sim = simulations[idx];
+  sim.simulation.data.clear();
+  sim.simulation.dataWithNoise.clear();
+  for (double t = 0.0; t < T; t += dt) {
+    sim.simulatable->step(dt);
+    rowToMatrix(sim.simulation.data, sim.simulatable->getValues());
+    rowToMatrix(sim.simulation.dataWithNoise,
+                sim.simulatable->getValuesWithNoise());
+  }
+}
 SimulationData &SimulationManager::getByName(const std::string &name) {
   return simulations[nameToIndex[name]];
+}
+
+void SimulationManager::draw() {
+  bool resimulateAll = false;
+  int freqHz = 1.0 / dt;
+  float time = T;
+  if (ImGui::SliderInt("Frequency", &freqHz, 1, 100)) {
+    resimulateAll = true;
+    dt = 1.0 / freqHz;
+  }
+  if (ImGui::SliderFloat("Duration", &time, 1.0, 20.0)) {
+    resimulateAll = true;
+    T = time;
+  }
+
+  ssize_t simulationChangedIdx = -1;
+  if (ImGui::BeginTabBar("Simulations")) {
+    for (size_t simulationIdx = 0; simulationIdx < simulations.size();
+         simulationIdx++) {
+      SimulationData &simulation = simulations[simulationIdx];
+      if (ImGui::BeginTabItem((std::to_string(simulationIdx) + ") " +
+                               simulation.simulation.name)
+                                  .c_str())) {
+        for (auto &[name, value] : simulation.params) {
+          float valueFloat = value;
+
+          if (ImGui::SliderFloat(name.c_str(), &valueFloat, -10.0, 10.0)) {
+            simulationChangedIdx = simulationIdx;
+          }
+          value = valueFloat;
+        }
+        ImGui::EndTabItem();
+      }
+    }
+
+    ImGui::EndTabBar();
+  }
+  if (simulationChangedIdx != -1) {
+    setParams(simulationChangedIdx);
+    simulateOne(simulationChangedIdx);
+  }
+  if (resimulateAll) {
+    setAllParams();
+    simulateAll();
+  }
 }

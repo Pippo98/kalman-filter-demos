@@ -31,7 +31,10 @@ class SimulationManager {
   std::vector<SimulationData> simulations;
   std::map<std::string, size_t> nameToIndex;
 
-  void setParams();
+  void setParams(size_t idx);
+  void setAllParams();
+  double dt = 0.05;
+  double T = 20.0;
 
  public:
   SimulationManager();
@@ -40,7 +43,10 @@ class SimulationManager {
   Cart2D cart2d;
 
   void reset();
-  void simulateAll(double dt, double T);
+  void simulateAll();
+  void simulateOne(size_t index);
 
   SimulationData &getByName(const std::string &name);
+
+  void draw();
 };
