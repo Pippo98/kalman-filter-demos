@@ -1,16 +1,13 @@
 #pragma once
 
-#include "simulator/simulator.hpp"
-
 class MainMenu {
  public:
-  void draw(Simulator &simulator);
+  void draw();
 
-  int getSimulationFrequency() const;
+  bool isPaused() const { return paused; }
 
  private:
   bool paused = false;
-  int frequency = 20;
 
-  void onPausedChanged(Simulator &simulator);
+  void onPausedChanged();
 };

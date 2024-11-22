@@ -42,10 +42,9 @@ int main(void) {
   while (app.IsOpen()) {
     app.BeginFrame();
 
-    mainMenu.draw(simulator);
+    mainMenu.draw();
 
-    if (TimeBase::getTimestampSeconds() - lastTime >=
-        1.0 / mainMenu.getSimulationFrequency()) {
+    if (TimeBase::getTimestampSeconds() - lastTime >= 1.0 / 20.0) {
       simulator.step();
       lastTime = TimeBase::getTimestampSeconds();
     }

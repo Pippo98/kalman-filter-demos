@@ -22,7 +22,8 @@ struct Real {
   std::normal_distribution<double> noise;
 
   Real(const char *_name) : Real(_name, 0.0) {};
-  Real(const char *_name, double std) : name(_name), noise(0.0, std) {}
+  Real(const char *_name, double std)
+      : name(_name), value(0.0), noise(0.0, std) {}
 
   double operator=(double val) { return value = val; }
   double operator+(double val) { return value + val; }
