@@ -2,6 +2,19 @@
 
 #include "imgui.h"
 #include "implot.h"
+
+inline void AddChronographPalettes() {
+  ImVec4 Colormap6[6];
+  bool discrete = false;
+  Colormap6[0] = ImVec4(0.192f, 0.753f, 0.965f, 1.000f);  // #31C0F6
+  Colormap6[1] = ImVec4(0.647f, 0.000f, 0.647f, 1.000f);  // #A500A5
+  Colormap6[2] = ImVec4(1.000f, 0.494f, 0.157f, 1.000f);  // #FF7E27
+  Colormap6[3] = ImVec4(0.024f, 0.753f, 0.000f, 1.000f);  // #06C002
+  Colormap6[4] = ImVec4(0.937f, 0.047f, 0.047f, 1.000f);  // #EF0C0C
+  Colormap6[5] = ImVec4(0.839f, 0.976f, 0.000f, 1.000f);  // #D6F900
+  ImPlot::AddColormap("Nineteen Eighty Four", Colormap6, 6, discrete);
+}
+
 inline void Dracula() {
   auto &colors = ImGui::GetStyle().Colors;
   colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.1f, 0.13f, 1.0f};
@@ -80,4 +93,7 @@ inline void Dracula() {
 
   auto &ipStyle = ImPlot::GetStyle();
   ipStyle.FitPadding = {0.1, 0.1};
+
+  AddChronographPalettes();
+  ipStyle.Colormap = ImPlot::GetColormapIndex("Nineteen Eighty Four");
 }

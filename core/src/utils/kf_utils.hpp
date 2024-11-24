@@ -3,6 +3,7 @@
 #include <vector>
 #include "Eigen/Core"
 #include "imgui.h"
+#include "implot.h"
 #include "kflib/src/ukf.hpp"
 #include "utils/csv.hpp"
 #include "utils/type_and_name.hpp"
@@ -102,7 +103,7 @@ inline bool drawKFData(KFData &kfData) {
     drawCSVTable("KF covariance", kfData.cov, {reg.x, reg.y / 5});
   }
 
-  {
+  if (ImGui::CollapsingHeader("Matrices")) {
     kfModified |= drawMatrix("Initial State", kfData.X0, {reg.x / 4.0f, 0.0f});
     ImGui::SameLine();
     kfModified |=
@@ -112,5 +113,36 @@ inline bool drawKFData(KFData &kfData) {
     ImGui::SameLine();
     kfModified |= drawMatrix("Measurement Cov", kfData.R, {reg.x / 4.0f, 0.0f});
   }
+
   return kfModified;
+}
+inline void plotStatesOrCovariance(
+    const std::string &prependName, const std::string &stateName,
+    const std::vector<std::string> &names,
+    const std::vector<std::vector<Real>> &statesOrCov) {
+  auto iter = std::find(names.begin(), names.end(), stateName);
+  if (iter == names.end()) {
+    return;
+  }
+  size_t idx = std::distance(names.begin(), iter) + 1;
+  const auto &xVec = statesOrCov[0];
+  const auto &yVec = statesOrCov[idx];
+  ImPlot::PlotLine((prependName + "." + stateName).c_str(), &xVec[0].value,
+                   &yVec[0].value, xVec.size(), 0, 0, sizeof(xVec[0]));
+}
+inline void plotKFState(const std::string &prependName,
+                        const std::string &stateName, KFData &kfData) {
+  if (!kfData.hasStates()) {
+    return;
+  }
+  plotStatesOrCovariance(prependName, stateName, kfData.statesNames,
+                         kfData.states);
+}
+inline void plotKFCovariance(const std::string &prependName,
+                             const std::string &stateName, KFData &kfData) {
+  if (!kfData.hasCov()) {
+    return;
+  }
+  plotStatesOrCovariance(prependName, stateName, kfData.statesNames,
+                         kfData.cov);
 }

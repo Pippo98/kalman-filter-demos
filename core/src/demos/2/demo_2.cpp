@@ -7,6 +7,7 @@
 #include "models/cart_2d.hpp"
 #include "simulator/simulation_manager.hpp"
 #include "utils/csv.hpp"
+#include "utils/kf_utils.hpp"
 
 Demo2::Demo2() {
   {
@@ -199,7 +200,6 @@ void Demo2::draw(SimulationData &sim) {
       kfModified |= drawKFData(kfPosOnly);
       ImGui::EndTabItem();
     }
-
     if (ImGui::BeginTabItem("KF position and speed")) {
       kfModified |= drawKFData(kfPosAndSpeed);
       ImGui::EndTabItem();
@@ -210,79 +210,77 @@ void Demo2::draw(SimulationData &sim) {
     }
     ImGui::EndTabBar();
   }
+  if (ImGui::CollapsingHeader("State comparison")) {
+    if (ImPlot::BeginSubplots("States and Covariances", 2, 2, reg,
+                              ImPlotSubplotFlags_LinkAllX)) {
+      if (ImPlot::BeginPlot("State X")) {
+        ImPlot::SetupAxes("time", "position");
+        ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+        ImPlot::PlotLine("real x", &sim.simulation.data[0][0].value,
+                         &sim.simulation.data[1][0].value,
+                         sim.simulation.data[0].size(), 0, 0, sizeof(Real));
+
+        plotKFState("kf1", "x", kfPosOnly);
+        plotKFState("kf2", "x", kfPosAndSpeed);
+        plotKFState("kf3", "x", kfPosSpeedAccel);
+        ImPlot::EndPlot();
+      }
+      if (ImPlot::BeginPlot("State Y")) {
+        ImPlot::SetupAxes("time", "position");
+        ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+        ImPlot::PlotLine("real y", &sim.simulation.data[0][0].value,
+                         &sim.simulation.data[2][0].value,
+                         sim.simulation.data[0].size(), 0, 0, sizeof(Real));
+
+        plotKFState("kf1", "y", kfPosOnly);
+        plotKFState("kf2", "y", kfPosAndSpeed);
+        plotKFState("kf3", "y", kfPosSpeedAccel);
+        ImPlot::EndPlot();
+      }
+      if (ImPlot::BeginPlot("Covariances X")) {
+        ImPlot::SetupAxes("time", "position");
+        plotKFCovariance("kf1", "x", kfPosOnly);
+        plotKFCovariance("kf2", "x", kfPosAndSpeed);
+        plotKFCovariance("kf3", "x", kfPosSpeedAccel);
+        ImPlot::EndPlot();
+      }
+      if (ImPlot::BeginPlot("Covariances Y")) {
+        ImPlot::SetupAxes("time", "position");
+        plotKFCovariance("kf1", "y", kfPosOnly);
+        plotKFCovariance("kf2", "y", kfPosAndSpeed);
+        plotKFCovariance("kf3", "y", kfPosSpeedAccel);
+        ImPlot::EndPlot();
+      }
+
+      ImPlot::EndSubplots();
+    }
+  }
 
   if (kfModified) {
     ukfSimulated = false;
   }
 
-  reg = ImGui::GetContentRegionAvail();
+  if (ImPlot::BeginPlot("2D Cart position", reg, ImPlotFlags_Equal)) {
+    ImPlot::SetupAxes("x", "y");
 
-  float rowRatios[2] = {0.75f, 0.25f};
-  if (ImPlot::BeginSubplots("Cart 1D", 2, 1, reg, ImPlotSubplotFlags_LinkAllX,
-                            rowRatios)) {
-    if (ImPlot::BeginPlot("2D Cart position", reg, ImPlotFlags_Equal)) {
-      ImPlot::SetupAxes("x", "y", ImPlotAxisFlags_AutoFit,
-                        ImPlotAxisFlags_AutoFit);
+    ImPlot::PlotLine("x", &sim.simulation.data[1].front().value,
+                     &sim.simulation.data[2].front().value,
+                     sim.simulation.data.front().size(), 0, 0, sizeof(Real));
 
-      ImPlot::PlotLine("x", &sim.simulation.data[1].front().value,
-                       &sim.simulation.data[2].front().value,
-                       sim.simulation.data.front().size(), 0, 0, sizeof(Real));
+    ImPlot::PlotScatter(
+        "x measured", &sim.simulation.dataWithNoise[1].front().value,
+        &sim.simulation.dataWithNoise[2].front().value,
+        sim.simulation.dataWithNoise.front().size(), 0, 0, sizeof(Real));
 
-      ImPlot::PlotScatter(
-          "x measured", &sim.simulation.dataWithNoise[1].front().value,
-          &sim.simulation.dataWithNoise[2].front().value,
-          sim.simulation.dataWithNoise.front().size(), 0, 0, sizeof(Real));
+    ImVec2 groundPoints[3] = {
+        {0.0, 5.0},
+        {float(cart.planeInclinationX), 5.0},
+        {float(cart.planeInclinationX + 30.0 * std::cos(cart.alpha)),
+         float(5.0 - 30 * std::sin(cart.alpha))}};
+    ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+    ImPlot::PlotLine("ground", &groundPoints[0].x, &groundPoints[0].y, 3, 0, 0,
+                     sizeof(ImVec2));
 
-      ImVec2 groundPoints[3] = {
-          {0.0, 5.0},
-          {float(cart.planeInclinationX), 5.0},
-          {float(cart.planeInclinationX + 30.0 * std::cos(cart.alpha)),
-           float(5.0 - 30 * std::sin(cart.alpha))}};
-      ImPlot::PlotLine("ground", &groundPoints[0].x, &groundPoints[0].y, 3, 0,
-                       0, sizeof(ImVec2));
-
-      if (kfPosOnly.hasStates()) {
-        ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 2.0);
-        ImPlot::PlotLine("x estimated 1", &kfPosOnly.states[1][0].value,
-                         &kfPosOnly.states[2][0].value,
-                         kfPosOnly.states[1].size(), 0, 0, sizeof(Real));
-      }
-      if (kfPosAndSpeed.hasStates()) {
-        ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 2.0);
-        ImPlot::PlotLine("x estimated 2", &kfPosAndSpeed.states[1][0].value,
-                         &kfPosAndSpeed.states[2][0].value,
-                         kfPosAndSpeed.states[0].size(), 0, 0, sizeof(Real));
-      }
-      if (kfPosSpeedAccel.hasStates()) {
-        ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 2.0);
-        ImPlot::PlotLine("x estimated 3", &kfPosSpeedAccel.states[1][0].value,
-                         &kfPosSpeedAccel.states[2][0].value,
-                         kfPosSpeedAccel.states[0].size(), 0, 0, sizeof(Real));
-      }
-
-      ImPlot::EndPlot();
-    }
-    if (ImPlot::BeginPlot("#1D Cart position", ImVec2(-1, 0),
-                          ImPlotFlags_NoTitle)) {
-      ImPlot::SetupAxes("time", "covariance");
-
-      if (kfPosOnly.hasCov()) {
-        ImPlot::PlotLine("x covariance 1", &kfPosOnly.cov[0][0].value,
-                         &kfPosOnly.cov[1][0].value, kfPosOnly.cov[0].size(), 0,
-                         0, sizeof(Real));
-      }
-      if (kfPosAndSpeed.hasCov()) {
-        ImPlot::PlotLine("x covariance 2", &kfPosAndSpeed.cov[0][0].value,
-                         &kfPosAndSpeed.cov[1][0].value,
-                         kfPosAndSpeed.cov[0].size(), 0, 0, sizeof(Real));
-      }
-      if (kfPosSpeedAccel.hasCov()) {
-        ImPlot::PlotLine("x covariance 3", &kfPosSpeedAccel.cov[0][0].value,
-                         &kfPosSpeedAccel.cov[1][0].value,
-                         kfPosSpeedAccel.cov[0].size(), 0, 0, sizeof(Real));
-      }
-      ImPlot::EndPlot();
-    }
-    ImPlot::EndSubplots();
+    ImPlot::EndPlot();
   }
 }

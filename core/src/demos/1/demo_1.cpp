@@ -133,7 +133,6 @@ void Demo1::draw(SimulationData &sim) {
     ukfSimulated = false;
   }
 
-  reg = ImGui::GetContentRegionAvail();
   float rowRatios[2] = {0.75f, 0.25f};
   if (ImPlot::BeginSubplots("Cart 1D", 2, 1, reg, ImPlotSubplotFlags_LinkAllX,
                             rowRatios)) {
