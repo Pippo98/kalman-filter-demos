@@ -21,6 +21,7 @@ class Demo2 : public Simulatable {
 
   bool ukfSimulated;
   size_t lastSimCount = 0;
+  int updateEvery = 0;
   KFData kfPosOnly;
   KFData kfPosAndSpeed;
   KFData kfPosSpeedAccel;

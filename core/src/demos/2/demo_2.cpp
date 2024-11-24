@@ -147,7 +147,9 @@ void Demo2::runKF(SimulationData &sim) {
       Eigen::VectorXd measure(2);
       measure(0) = data[1][row].value;
       measure(1) = data[2][row].value;
-      kfPosOnly.ukf.update(measure);
+      if (updateEvery == 0 || row % updateEvery == 0) {
+        kfPosOnly.ukf.update(measure);
+      }
 
       kfPosOnly.addStateAndCovariance(data[0][row]);
     }
@@ -162,7 +164,9 @@ void Demo2::runKF(SimulationData &sim) {
       Eigen::VectorXd measure(2);
       measure(0) = data[1][row].value;
       measure(1) = data[2][row].value;
-      kfPosAndSpeed.ukf.update(measure);
+      if (updateEvery == 0 || row % updateEvery == 0) {
+        kfPosAndSpeed.ukf.update(measure);
+      }
 
       kfPosAndSpeed.addStateAndCovariance(data[0][row]);
     }
@@ -177,7 +181,9 @@ void Demo2::runKF(SimulationData &sim) {
       Eigen::VectorXd measure(2);
       measure(0) = data[1][row].value;
       measure(1) = data[2][row].value;
-      kfPosSpeedAccel.ukf.update(measure);
+      if (updateEvery == 0 || row % updateEvery == 0) {
+        kfPosSpeedAccel.ukf.update(measure);
+      }
 
       kfPosSpeedAccel.addStateAndCovariance(data[0][row]);
     }
@@ -190,7 +196,6 @@ void Demo2::runKF(SimulationData &sim) {
   kfPosSpeedAccel.calculateResiduals("y", data[2]);
 }
 void Demo2::draw(SimulationData &sim) {
-  Cart2D &cart = *dynamic_cast<Cart2D *>(sim.simulatable);
   if (!ukfSimulated || lastSimCount != sim.simCount) {
     lastSimCount = sim.simCount;
     ukfSimulated = true;
@@ -201,6 +206,10 @@ void Demo2::draw(SimulationData &sim) {
 
   ImVec2 reg = ImGui::GetContentRegionAvail();
 
+  ImGui::SetNextItemWidth(120);
+  if (ImGui::InputInt("Update every n samples", &updateEvery, 1, 1)) {
+    kfModified = true;
+  }
   if (ImGui::BeginTabBar("KF settings")) {
     if (ImGui::BeginTabItem("KF position")) {
       kfModified |= drawKFData(kfPosOnly);
