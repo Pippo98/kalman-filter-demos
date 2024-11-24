@@ -117,59 +117,6 @@ void Demo1::runKF(SimulationData &sim) {
   }
 }
 
-template <typename EigenVecOrMatrix>
-bool drawMatrix(const char *id, EigenVecOrMatrix &mat,
-                ImVec2 size = ImVec2(0.0f, 0.0f)) {
-  bool modified = false;
-  ImGui::BeginGroup();
-  ImGui::TextUnformatted(id);
-  if (ImGui::BeginTable(id, mat.cols(), ImGuiTableFlags_Borders, size)) {
-    for (int row = 0; row < mat.rows(); row++) {
-      ImGui::PushID(row);
-      ImGui::TableNextRow();
-      for (int col = 0; col < mat.cols(); col++) {
-        ImGui::PushID(col);
-        ImGui::TableNextColumn();
-        ImGui::SetNextItemWidth(100);
-        if (ImGui::InputDouble("##cell", &mat(row, col))) {
-          modified = true;
-        }
-        if (mat.cols() == mat.rows()) {
-          mat(col, row) = mat(row, col);
-        }
-        ImGui::PopID();
-      }
-      ImGui::PopID();
-    }
-
-    ImGui::EndTable();
-  }
-  ImGui::EndGroup();
-  return modified;
-}
-bool drawKFData(KFData &kfData) {
-  ImVec2 reg = ImGui::GetContentRegionAvail();
-  bool kfModified = false;
-  if (ImGui::CollapsingHeader("KF states")) {
-    drawCSVTable("KF states", kfData.states, {reg.x, reg.y / 5});
-  }
-  if (ImGui::CollapsingHeader("KF covariance")) {
-    drawCSVTable("KF covariance", kfData.cov, {reg.x, reg.y / 5});
-  }
-
-  {
-    kfModified |= drawMatrix("Initial State", kfData.X0, {reg.x / 4.0f, 0.0f});
-    ImGui::SameLine();
-    kfModified |=
-        drawMatrix("Initial State Cov", kfData.P0, {reg.x / 4.0f, 0.0f});
-    ImGui::SameLine();
-    kfModified |= drawMatrix("Process Cov", kfData.Q, {reg.x / 4.0f, 0.0f});
-    ImGui::SameLine();
-    kfModified |= drawMatrix("Measurement Cov", kfData.R, {reg.x / 4.0f, 0.0f});
-  }
-  return kfModified;
-}
-
 void Demo1::draw(SimulationData &sim) {
   if (!ukfSimulated || lastSimCount != sim.simCount) {
     lastSimCount = sim.simCount;
@@ -183,12 +130,12 @@ void Demo1::draw(SimulationData &sim) {
 
   if (ImGui::BeginTabBar("KF settings")) {
     if (ImGui::BeginTabItem("KF position")) {
-      drawKFData(kfPosOnly);
+      kfModified |= drawKFData(kfPosOnly);
       ImGui::EndTabItem();
     }
 
     if (ImGui::BeginTabItem("KF position and speed")) {
-      drawKFData(kfPosAndSpeed);
+      kfModified |= drawKFData(kfPosAndSpeed);
       ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
