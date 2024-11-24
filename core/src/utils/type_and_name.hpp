@@ -22,8 +22,9 @@ struct Real {
   std::normal_distribution<double> noise;
 
   Real(const char *_name) : Real(_name, 0.0) {};
-  Real(const char *_name, double std)
-      : name(_name), value(0.0), noise(0.0, std) {}
+  Real(const char *_name, double std) : Real(_name, 0.0, std) {}
+  Real(const char *_name, double _value, double std)
+      : name(_name), value(_value), noise(0.0, std) {}
   Real getWithNoise() const {
     Real ret = *this;
     ret.value += ret.noise(RandomGenerator::get());
