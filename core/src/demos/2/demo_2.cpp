@@ -10,7 +10,7 @@
 
 Demo2::Demo2() {
   {
-    kfPosOnly.initializeMatrices(2, 2);
+    kfPosOnly.initializeMatrices({"x", "y"}, {"x", "y"});
     kfPosOnly.X0(0) = -10.0;
     kfPosOnly.X0(1) = -10.0;
     kfPosOnly.P0(0, 0) = 1e1;
@@ -20,7 +20,7 @@ Demo2::Demo2() {
     kfPosOnly.R(1, 1) = 0.5;
   }
   {
-    kfPosAndSpeed.initializeMatrices(4, 2);
+    kfPosAndSpeed.initializeMatrices({"x", "y", "vx", "vy"}, {"x", "y"});
     kfPosAndSpeed.X0(0) = -10.0;
     kfPosAndSpeed.X0(1) = -10.0;
     kfPosAndSpeed.X0(2) = 0.0;
@@ -37,7 +37,7 @@ Demo2::Demo2() {
     kfPosAndSpeed.R(1, 1) = 0.5;
   }
   {
-    kfPosSpeedAccel.initializeMatrices(4, 2);
+    kfPosSpeedAccel.initializeMatrices({"x", "y", "vg", "alpha"}, {"x", "y"});
     kfPosSpeedAccel.X0(0) = -10.0;
     kfPosSpeedAccel.X0(1) = -10.0;
     kfPosSpeedAccel.X0(2) = 0.0;
@@ -147,67 +147,38 @@ void Demo2::runKF(SimulationData &sim) {
       measure(0) = data[1][row].value;
       measure(1) = data[2][row].value;
       kfPosOnly.ukf.update(measure);
-      auto state = kfPosOnly.ukf.getState();
-      kfPosOnly.states[0].push_back(Real("t", data[0][row].value, 0.0));
-      kfPosOnly.states[1].push_back(Real("x", state(0), 0.0));
-      kfPosOnly.states[2].push_back(Real("y", state(1), 0.0));
 
-      const auto &cov = kfPosOnly.ukf.getCovariance();
-      kfPosOnly.cov[0].push_back(Real("t", data[0][row].value, 0.0));
-      kfPosOnly.cov[1].push_back(Real("x-x", cov(0, 0), 0.0));
-      kfPosOnly.cov[2].push_back(Real("y-y", cov(1, 1), 0.0));
+      kfPosOnly.addStateAndCovariance(data[0][row]);
     }
     {
       double dt = 0.0;
       if (row > 0) {
         dt = data[0][row] - data[0][row - 1];
       }
-
       kfPosAndSpeed.ukf.setUserData(&dt);
+
       kfPosAndSpeed.ukf.predict();
       Eigen::VectorXd measure(2);
       measure(0) = data[1][row].value;
       measure(1) = data[2][row].value;
       kfPosAndSpeed.ukf.update(measure);
-      const auto &state = kfPosAndSpeed.ukf.getState();
-      kfPosAndSpeed.states[0].push_back(Real("t", data[0][row].value, 0.0));
-      kfPosAndSpeed.states[1].push_back(Real("x", state(0), 0.0));
-      kfPosAndSpeed.states[2].push_back(Real("y", state(1), 0.0));
-      kfPosAndSpeed.states[3].push_back(Real("vx", state(2), 0.0));
-      kfPosAndSpeed.states[4].push_back(Real("vy", state(3), 0.0));
 
-      const auto &cov = kfPosAndSpeed.ukf.getCovariance();
-      kfPosAndSpeed.cov[0].push_back(Real("t", data[0][row], 0.0));
-      kfPosAndSpeed.cov[1].push_back(Real("x-x", cov(0, 0), 0.0));
-      kfPosAndSpeed.cov[2].push_back(Real("y-y", cov(1, 1), 0.0));
-      kfPosAndSpeed.cov[3].push_back(Real("vx-vx", cov(2, 2), 0.0));
-      kfPosAndSpeed.cov[4].push_back(Real("vy-vy", cov(3, 3), 0.0));
+      kfPosAndSpeed.addStateAndCovariance(data[0][row]);
     }
     {
       double dt = 0.0;
       if (row > 0) {
         dt = data[0][row] - data[0][row - 1];
       }
-
       kfPosSpeedAccel.ukf.setUserData(&dt);
+
       kfPosSpeedAccel.ukf.predict();
       Eigen::VectorXd measure(2);
       measure(0) = data[1][row].value;
       measure(1) = data[2][row].value;
       kfPosSpeedAccel.ukf.update(measure);
-      const auto &state = kfPosSpeedAccel.ukf.getState();
-      kfPosSpeedAccel.states[0].push_back(Real("t", data[0][row].value, 0.0));
-      kfPosSpeedAccel.states[1].push_back(Real("x", state(0), 0.0));
-      kfPosSpeedAccel.states[2].push_back(Real("y", state(1), 0.0));
-      kfPosSpeedAccel.states[3].push_back(Real("vg", state(2), 0.0));
-      kfPosSpeedAccel.states[4].push_back(Real("alpha", state(3), 0.0));
 
-      const auto &cov = kfPosSpeedAccel.ukf.getCovariance();
-      kfPosSpeedAccel.cov[0].push_back(Real("t", data[0][row], 0.0));
-      kfPosSpeedAccel.cov[1].push_back(Real("x-x", cov(0, 0), 0.0));
-      kfPosSpeedAccel.cov[2].push_back(Real("y-y", cov(1, 1), 0.0));
-      kfPosSpeedAccel.cov[3].push_back(Real("vg-vg", cov(2, 2), 0.0));
-      kfPosSpeedAccel.cov[4].push_back(Real("alpha-alpha", cov(3, 3), 0.0));
+      kfPosSpeedAccel.addStateAndCovariance(data[0][row]);
     }
   }
 }

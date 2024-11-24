@@ -48,7 +48,7 @@ class SimulationManager {
   bool drawExtraParams(const std::string &modelName);
 
   double dt = 0.05;
-  double T = 20.0;
+  double T = 10.0;
 
  public:
   SimulationManager();

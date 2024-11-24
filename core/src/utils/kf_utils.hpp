@@ -15,6 +15,8 @@ struct KFData {
   Eigen::MatrixXd P0;  // initial state covariance
   Eigen::MatrixXd Q;   // process covariance
   Eigen::MatrixXd R;   // measureent covariance
+  std::vector<std::string> statesNames;
+  std::vector<std::string> measurementsNames;
 
   void clearData() {
     states.clear();
@@ -26,11 +28,14 @@ struct KFData {
   bool hasStates() { return !states.empty() && !states.front().empty(); }
   bool hasCov() { return !cov.empty() && !cov.front().empty(); }
 
-  void initializeMatrices(size_t states, size_t measurements) {
-    X0 = Eigen::VectorXd(states);
-    P0 = Eigen::MatrixXd(states, states);
-    Q = Eigen::MatrixXd(states, states);
-    R = Eigen::MatrixXd(measurements, measurements);
+  void initializeMatrices(const std::vector<std::string> &_statesNames,
+                          const std::vector<std::string> &_measurementsNames) {
+    statesNames = _statesNames;
+    measurementsNames = _measurementsNames;
+    X0 = Eigen::VectorXd(statesNames.size());
+    P0 = Eigen::MatrixXd(statesNames.size(), statesNames.size());
+    Q = Eigen::MatrixXd(statesNames.size(), statesNames.size());
+    R = Eigen::MatrixXd(measurementsNames.size(), measurementsNames.size());
     X0.setZero();
     P0.setZero();
     Q.setZero();
@@ -41,6 +46,19 @@ struct KFData {
     ukf.setStateCovariance(P0);
     ukf.setProcessCovariance(Q);
     ukf.setMeasurementCovariance(R);
+  }
+  void addStateAndCovariance(double timestamp) {
+    auto state = ukf.getState();
+    const auto &covariance = ukf.getCovariance();
+
+    states[0].push_back(Real("t", timestamp, 0.0));
+    cov[0].push_back(Real("t", timestamp, 0.0));
+
+    for (size_t i = 0; i < statesNames.size(); i++) {
+      const std::string &n = statesNames[i];
+      states[i + 1].push_back(Real(n.c_str(), state(i), 0.0));
+      cov[i + 1].push_back(Real((n + "-" + n).c_str(), covariance(i, i), 0.0));
+    }
   }
 };
 

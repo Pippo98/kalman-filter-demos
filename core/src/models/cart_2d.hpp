@@ -7,7 +7,7 @@
 class Cart2D : public Simulatable {
  public:
   Cart2D() {
-    vx = 1.0;
+    vx = 2.0;
     y = 5.0;
     alpha = 10.0 * CONST_TO_RAD;
     planeInclinationX = 10.0;

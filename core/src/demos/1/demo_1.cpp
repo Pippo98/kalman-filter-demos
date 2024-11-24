@@ -7,14 +7,14 @@
 
 Demo1::Demo1() {
   {
-    kfPosOnly.initializeMatrices(1, 1);
+    kfPosOnly.initializeMatrices({"x"}, {"x"});
     kfPosOnly.X0(0) = -10.0;
     kfPosOnly.P0(0, 0) = 1e1;
     kfPosOnly.Q(0, 0) = 0.1;
     kfPosOnly.R(0, 0) = 0.5;
   }
   {
-    kfPosAndSpeed.initializeMatrices(2, 1);
+    kfPosAndSpeed.initializeMatrices({"x", "vx"}, {"x"});
     kfPosAndSpeed.X0(0) = -10.0;
     kfPosAndSpeed.X0(1) = 0.0;
     kfPosAndSpeed.P0(0, 0) = 1e1;
@@ -85,13 +85,8 @@ void Demo1::runKF(SimulationData &sim) {
       Eigen::VectorXd measure(1);
       measure(0) = data[1][row].value;
       kfPosOnly.ukf.update(measure);
-      auto state = kfPosOnly.ukf.getState();
-      kfPosOnly.states[0].push_back(Real("t", data[0][row].value, 0.0));
-      kfPosOnly.states[1].push_back(Real("x", state(0), 0.0));
 
-      const auto &cov = kfPosOnly.ukf.getCovariance();
-      kfPosOnly.cov[0].push_back(Real("t", data[0][row].value, 0.0));
-      kfPosOnly.cov[1].push_back(Real("x-x", cov(0, 0), 0.0));
+      kfPosOnly.addStateAndCovariance(data[0][row]);
     }
     {
       double dt = 0.0;
@@ -104,15 +99,8 @@ void Demo1::runKF(SimulationData &sim) {
       Eigen::VectorXd measure(1);
       measure(0) = data[1][row].value;
       kfPosAndSpeed.ukf.update(measure);
-      const auto &state = kfPosAndSpeed.ukf.getState();
-      kfPosAndSpeed.states[0].push_back(Real("t", data[0][row].value, 0.0));
-      kfPosAndSpeed.states[1].push_back(Real("x", state(0), 0.0));
-      kfPosAndSpeed.states[2].push_back(Real("vx", state(1), 0.0));
 
-      const auto &cov = kfPosAndSpeed.ukf.getCovariance();
-      kfPosAndSpeed.cov[0].push_back(Real("t", data[0][row], 0.0));
-      kfPosAndSpeed.cov[1].push_back(Real("x-x", cov(0, 0), 0.0));
-      kfPosAndSpeed.cov[2].push_back(Real("vx-vx", cov(1, 1), 0.0));
+      kfPosAndSpeed.addStateAndCovariance(data[0][row]);
     }
   }
 }
