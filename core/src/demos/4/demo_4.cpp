@@ -46,7 +46,7 @@ Demo4::Demo4() {
     kfPosSpeedAccel.X0(1) = 0.0;
     kfPosSpeedAccel.X0(2) = 0.0;
     kfPosSpeedAccel.X0(3) = 0.0;
-    kfPosSpeedAccel.X0(4) = 0.0;
+    kfPosSpeedAccel.X0(4) = 1.5;
 
     kfPosSpeedAccel.P0(0, 0) = 5;
     kfPosSpeedAccel.P0(1, 1) = 5;
@@ -221,8 +221,8 @@ bool Demo4::runKF(SimulationData &sim, int iterations) {
       Eigen::VectorXd measure(6);
       measure(0) = data[11][row].value;
       measure(1) = data[12][row].value;
-      measure(2) = data[13][row].value;
-      measure(3) = data[14][row].value;
+      measure(2) = data[14][row].value;
+      measure(3) = data[13][row].value;
       measure(4) = data[8][row].value;
       measure(5) = data[9][row].value;
       // measure(3) = data[10][row].value;
@@ -274,7 +274,7 @@ void Demo4::draw(SimulationData &sim) {
     if (first) {
       setupKF();
     }
-    ukfSimulated = runKF(sim, 10);
+    ukfSimulated = runKF(sim, 100);
     first = ukfSimulated;
   }
   bool kfModified = false;
