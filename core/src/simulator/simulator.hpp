@@ -9,6 +9,14 @@ class Simulatable {
  public:
   virtual void step(double dt) = 0;
 
+  void setValueByName(const std::string &name, double value, double std) {
+    for (auto &ptr : getValuesPtr()) {
+      if (ptr->name == name) {
+        ptr->value = value;
+        ptr->noise = decltype(ptr->noise)(0.0, std);
+      }
+    }
+  }
   void setValueByName(const std::string &name, double value) {
     for (auto &ptr : getValuesPtr()) {
       if (ptr->name == name) {

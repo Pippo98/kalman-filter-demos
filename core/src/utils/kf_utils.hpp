@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+#include <map>
 #include <vector>
 #include "Eigen/Core"
 #include "imgui.h"
@@ -18,6 +20,8 @@ struct KFData {
   Eigen::MatrixXd R;   // measureent covariance
   std::vector<std::string> statesNames;
   std::vector<std::string> measurementsNames;
+
+  std::map<std::string, std::vector<Real>> residuals;
 
   void clearData() {
     states.clear();
@@ -60,6 +64,24 @@ struct KFData {
       states[i + 1].push_back(Real(n.c_str(), state(i), 0.0));
       cov[i + 1].push_back(Real((n + "-" + n).c_str(), covariance(i, i), 0.0));
     }
+  }
+  void calculateResiduals(const std::string &state,
+                          const std::vector<Real> &groundtruth) {
+    auto itr = std::find(statesNames.begin(), statesNames.end(), state);
+    if (itr == statesNames.end()) {
+      return;
+    }
+    size_t idx = std::distance(statesNames.begin(), itr) + 1;
+    const auto &vec = states[idx];
+    if (vec.size() != groundtruth.size()) {
+      return;
+    }
+    std::vector<Real> ret;
+    for (size_t i = 0; i < vec.size(); i++) {
+      ret.push_back(vec[i]);
+      ret[i] = std::sqrt(std::pow(vec[i].value - groundtruth[i].value, 2));
+    }
+    residuals[state] = ret;
   }
 };
 

@@ -62,15 +62,15 @@ SimulationManager::SimulationManager() {
 }
 void SimulationManager::setParams(size_t idx) {
   simulations[idx].simulatable->setValueByName("t", 0.0);
-  for (const auto &[name, value, _] : simulations[idx].params) {
-    simulations[idx].simulatable->setValueByName(name, value);
+  for (const auto &[name, value, noise] : simulations[idx].params) {
+    simulations[idx].simulatable->setValueByName(name, value, noise.stddev());
   }
 }
 void SimulationManager::setAllParams() {
   for (auto &simulation : simulations) {
     simulation.simulatable->setValueByName("t", 0.0);
-    for (const auto &[name, value, _] : simulation.params) {
-      simulation.simulatable->setValueByName(name, value);
+    for (const auto &[name, value, noise] : simulation.params) {
+      simulation.simulatable->setValueByName(name, value, noise.stddev());
     }
   }
 }
@@ -157,15 +157,23 @@ void SimulationManager::draw() {
                                simulation.simulation.name)
                                   .c_str())) {
         ImGui::SeparatorText("States Initial Conditions");
-        for (auto &[name, value, _] : simulation.params) {
+        for (auto &[name, value, noise] : simulation.params) {
           if (name == "t") {
             continue;
           }
           float valueFloat = value;
 
+          ImGui::SetNextItemWidth(120);
           if (ImGui::InputFloat(name.c_str(), &valueFloat, 0.01, 0.1)) {
             simulationChangedIdx = simulationIdx;
             value = valueFloat;
+          }
+          ImGui::SameLine();
+          ImGui::SetNextItemWidth(120);
+          float std = noise.stddev();
+          if (ImGui::InputFloat(("std of " + name).c_str(), &std, 0.01, 0.1)) {
+            simulationChangedIdx = simulationIdx;
+            noise = decltype(noise)(0.0, std);
           }
         }
         ImGui::SeparatorText("Model Parameters");

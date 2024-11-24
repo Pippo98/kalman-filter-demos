@@ -182,6 +182,12 @@ void Demo2::runKF(SimulationData &sim) {
       kfPosSpeedAccel.addStateAndCovariance(data[0][row]);
     }
   }
+  kfPosOnly.calculateResiduals("x", data[1]);
+  kfPosOnly.calculateResiduals("y", data[2]);
+  kfPosAndSpeed.calculateResiduals("x", data[1]);
+  kfPosAndSpeed.calculateResiduals("y", data[2]);
+  kfPosSpeedAccel.calculateResiduals("x", data[1]);
+  kfPosSpeedAccel.calculateResiduals("y", data[2]);
 }
 void Demo2::draw(SimulationData &sim) {
   Cart2D &cart = *dynamic_cast<Cart2D *>(sim.simulatable);
@@ -211,6 +217,11 @@ void Demo2::draw(SimulationData &sim) {
     ImGui::EndTabBar();
   }
   if (ImGui::CollapsingHeader("State comparison")) {
+    static bool showCov = true;
+    static bool showRes = false;
+    ImGui::Checkbox("show Cov", &showCov);
+    ImGui::SameLine();
+    ImGui::Checkbox("show Res", &showRes);
     if (ImPlot::BeginSubplots("States and Covariances", 2, 2, reg,
                               ImPlotSubplotFlags_LinkAllX)) {
       if (ImPlot::BeginPlot("State X")) {
@@ -238,17 +249,63 @@ void Demo2::draw(SimulationData &sim) {
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("Covariances X")) {
-        ImPlot::SetupAxes("time", "position");
-        plotKFCovariance("kf1", "x", kfPosOnly);
-        plotKFCovariance("kf2", "x", kfPosAndSpeed);
-        plotKFCovariance("kf3", "x", kfPosSpeedAccel);
+        ImPlot::SetupAxis(ImAxis_X1, "time");
+        if (showCov) {
+          ImPlot::SetupAxis(ImAxis_Y1, "cov");
+        }
+        if (showRes) {
+          ImPlot::SetupAxis(ImAxis_Y2, "residuals");
+        }
+
+        if (showCov) {
+          plotKFCovariance("kf1", "x", kfPosOnly);
+          plotKFCovariance("kf2", "x", kfPosAndSpeed);
+          plotKFCovariance("kf3", "x", kfPosSpeedAccel);
+        }
+
+        if (showRes) {
+          ImPlot::SetAxis(ImAxis_Y2);
+          ImPlot::PlotLine("res kf1.x", &kfPosOnly.states[0][0].value,
+                           &kfPosOnly.residuals["x"][0].value,
+                           kfPosOnly.states[0].size(), 0, 0, sizeof(Real));
+          ImPlot::PlotLine("res kf2.x", &kfPosAndSpeed.states[0][0].value,
+                           &kfPosAndSpeed.residuals["x"][0].value,
+                           kfPosAndSpeed.states[0].size(), 0, 0, sizeof(Real));
+          ImPlot::PlotLine("res kf3.x", &kfPosSpeedAccel.states[0][0].value,
+                           &kfPosSpeedAccel.residuals["x"][0].value,
+                           kfPosSpeedAccel.states[0].size(), 0, 0,
+                           sizeof(Real));
+        }
+
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("Covariances Y")) {
-        ImPlot::SetupAxes("time", "position");
-        plotKFCovariance("kf1", "y", kfPosOnly);
-        plotKFCovariance("kf2", "y", kfPosAndSpeed);
-        plotKFCovariance("kf3", "y", kfPosSpeedAccel);
+        ImPlot::SetupAxis(ImAxis_X1, "time");
+        if (showCov) {
+          ImPlot::SetupAxis(ImAxis_Y1, "cov");
+        }
+        if (showRes) {
+          ImPlot::SetupAxis(ImAxis_Y2, "residuals");
+        }
+
+        if (showCov) {
+          plotKFCovariance("kf1", "y", kfPosOnly);
+          plotKFCovariance("kf2", "y", kfPosAndSpeed);
+          plotKFCovariance("kf3", "y", kfPosSpeedAccel);
+        }
+        if (showRes) {
+          ImPlot::SetAxis(ImAxis_Y2);
+          ImPlot::PlotLine("res kf1.y", &kfPosOnly.states[0][0].value,
+                           &kfPosOnly.residuals["y"][0].value,
+                           kfPosOnly.states[0].size(), 0, 0, sizeof(Real));
+          ImPlot::PlotLine("res kf2.y", &kfPosAndSpeed.states[0][0].value,
+                           &kfPosAndSpeed.residuals["y"][0].value,
+                           kfPosAndSpeed.states[0].size(), 0, 0, sizeof(Real));
+          ImPlot::PlotLine("res kf3.y", &kfPosSpeedAccel.states[0][0].value,
+                           &kfPosSpeedAccel.residuals["y"][0].value,
+                           kfPosSpeedAccel.states[0].size(), 0, 0,
+                           sizeof(Real));
+        }
         ImPlot::EndPlot();
       }
 
@@ -272,14 +329,21 @@ void Demo2::draw(SimulationData &sim) {
         &sim.simulation.dataWithNoise[2].front().value,
         sim.simulation.dataWithNoise.front().size(), 0, 0, sizeof(Real));
 
-    ImVec2 groundPoints[3] = {
-        {0.0, 5.0},
-        {float(cart.planeInclinationX), 5.0},
-        {float(cart.planeInclinationX + 30.0 * std::cos(cart.alpha)),
-         float(5.0 - 30 * std::sin(cart.alpha))}};
-    ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
-    ImPlot::PlotLine("ground", &groundPoints[0].x, &groundPoints[0].y, 3, 0, 0,
-                     sizeof(ImVec2));
+    if (kfPosOnly.hasStates()) {
+      ImPlot::PlotLine("kf1", &kfPosOnly.states[1][0].value,
+                       &kfPosOnly.states[2][0].value,
+                       kfPosOnly.states[0].size(), 0, 0, sizeof(Real));
+    }
+    if (kfPosAndSpeed.hasStates()) {
+      ImPlot::PlotLine("kf2", &kfPosAndSpeed.states[1][0].value,
+                       &kfPosAndSpeed.states[2][0].value,
+                       kfPosAndSpeed.states[0].size(), 0, 0, sizeof(Real));
+    }
+    if (kfPosSpeedAccel.hasStates()) {
+      ImPlot::PlotLine("kf3", &kfPosSpeedAccel.states[1][0].value,
+                       &kfPosSpeedAccel.states[2][0].value,
+                       kfPosSpeedAccel.states[0].size(), 0, 0, sizeof(Real));
+    }
 
     ImPlot::EndPlot();
   }
