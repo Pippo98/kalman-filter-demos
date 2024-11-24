@@ -1,4 +1,4 @@
-#include "demo_2.hpp"
+#include "demo_4.hpp"
 
 #include <memory>
 #include "defines.hpp"
@@ -9,7 +9,7 @@
 #include "utils/csv.hpp"
 #include "utils/kf_utils.hpp"
 
-Demo2::Demo2() {
+Demo4::Demo4() {
   {
     kfPosOnly.initializeMatrices({"x", "y"}, {"x", "y"});
     kfPosOnly.X0(0) = -10.0;
@@ -39,24 +39,36 @@ Demo2::Demo2() {
     kfPosAndSpeed.R(1, 1) = 0.5;
   }
   {
-    kfPosSpeedAccel.initializeMatrices({"x", "y", "vg", "alpha"}, {"x", "y"});
-    kfPosSpeedAccel.X0(0) = -10.0;
-    kfPosSpeedAccel.X0(1) = -10.0;
+    kfPosSpeedAccel.initializeMatrices(
+        {"x", "y", "u", "v", "psi"},
+        {"w_fl", "w_fr", "w_rl", "w_rr", "x", "y"});
+    kfPosSpeedAccel.X0(0) = 0.0;
+    kfPosSpeedAccel.X0(1) = 0.0;
     kfPosSpeedAccel.X0(2) = 0.0;
     kfPosSpeedAccel.X0(3) = 0.0;
-    kfPosSpeedAccel.P0(0, 0) = 1e1;
-    kfPosSpeedAccel.P0(1, 1) = 1e1;
-    kfPosSpeedAccel.P0(2, 2) = 1e1;
-    kfPosSpeedAccel.P0(3, 3) = 0.1;
-    kfPosSpeedAccel.Q(0, 0) = 0.01;
-    kfPosSpeedAccel.Q(1, 1) = 0.01;
-    kfPosSpeedAccel.Q(2, 2) = 0.001;
-    kfPosSpeedAccel.Q(3, 3) = 0.001;
-    kfPosSpeedAccel.R(0, 0) = 0.5;
-    kfPosSpeedAccel.R(1, 1) = 0.5;
+    kfPosSpeedAccel.X0(4) = 0.0;
+
+    kfPosSpeedAccel.P0(0, 0) = 5;
+    kfPosSpeedAccel.P0(1, 1) = 5;
+    kfPosSpeedAccel.P0(2, 2) = 5;
+    kfPosSpeedAccel.P0(3, 3) = 5;
+    kfPosSpeedAccel.P0(4, 4) = 1;
+
+    kfPosSpeedAccel.Q(0, 0) = 0.005;
+    kfPosSpeedAccel.Q(1, 1) = 0.005;
+    kfPosSpeedAccel.Q(2, 2) = 0.005;
+    kfPosSpeedAccel.Q(3, 3) = 0.005;
+    kfPosSpeedAccel.Q(4, 4) = 0.01;
+
+    kfPosSpeedAccel.R(0, 0) = 0.2;
+    kfPosSpeedAccel.R(1, 1) = 0.2;
+    kfPosSpeedAccel.R(2, 2) = 0.2;
+    kfPosSpeedAccel.R(3, 3) = 0.2;
+    kfPosSpeedAccel.R(4, 4) = 0.1;
+    kfPosSpeedAccel.R(5, 5) = 0.1;
   }
 }
-void Demo2::setupKF() {
+void Demo4::setupKF() {
   {
     auto &ukfPositionOnly = kfPosOnly.ukf;
     kfPosOnly.setMatrices();
@@ -117,10 +129,14 @@ void Demo2::setupKF() {
           (void)input;
           double dt = *(double *)userData;
           auto newState = state;
-          newState(0) = state(0) + std::cos(state(3)) * state(2) * dt;
-          newState(1) = state(1) + std::sin(state(3)) * state(2) * dt;
-          newState(2) = state(2) + CONST_G * std::sin(state(3)) * dt;
-          newState(3) = state(3);
+
+          newState(0) = state(2) * cos(state(4)) - state(3) * sin(state(4));
+          newState(1) = state(2) * sin(state(4)) + state(3) * cos(state(4));
+          newState(2) = input(0) + input(2) * state(3);
+          newState(3) = input(1) - input(2) * state(2);
+          newState(4) = input(2);
+
+          newState = state + newState * dt;
           return newState;
         });
     ukfPositionSpeedAccel.setMeasurementFunction(
@@ -128,26 +144,44 @@ void Demo2::setupKF() {
            void *userData) -> Eigen::VectorXd {
           (void)input;
           (void)userData;
-          Eigen::VectorXd measures(2);
-          measures(0) = state(0);
-          measures(1) = state(1);
+          Eigen::VectorXd measures(6);
+          double Rf = 0.1957;
+          double Rr = 0.1918;
+          double Wf = 1.27;
+          double Wr = 1.21;
+          measures(0) = 1.0 / Rf * (state(2) - input(2) * Wf / 2.0);
+          measures(1) = 1.0 / Rf * (state(2) + input(2) * Wf / 2.0);
+          measures(2) = 1.0 / Rr * (state(2) - input(2) * Wr / 2.0);
+          measures(3) = 1.0 / Rr * (state(2) + input(2) * Wr / 2.0);
+          measures(4) = state(0);
+          measures(5) = state(1);
           return measures;
         });
   }
 }
-void Demo2::runKF(SimulationData &sim) {
+bool Demo4::runKF(SimulationData &sim, int iterations) {
   auto &data = sim.simulation.dataWithNoise;
   size_t rows = data.front().size();
 
-  kfPosOnly.clearData();
-  kfPosAndSpeed.clearData();
-  kfPosSpeedAccel.clearData();
-  for (size_t row = 0; row < rows; row++) {
+  static size_t startRow = 0;
+  static size_t endRow;
+  if (iterations > 0) {
+    endRow = std::min(startRow + iterations + 1, rows);
+  } else {
+    startRow = 0;
+    endRow = rows;
+  }
+  if (startRow == 0) {
+    kfPosOnly.clearData();
+    kfPosAndSpeed.clearData();
+    kfPosSpeedAccel.clearData();
+  }
+  for (size_t row = startRow; row < endRow; row++) {
     {
       kfPosOnly.ukf.predict();
       Eigen::VectorXd measure(2);
-      measure(0) = data[1][row].value;
-      measure(1) = data[2][row].value;
+      measure(0) = data[8][row].value;
+      measure(1) = data[9][row].value;
       if (updateEvery == 0 || row % updateEvery == 0) {
         kfPosOnly.ukf.update(measure);
       }
@@ -163,8 +197,8 @@ void Demo2::runKF(SimulationData &sim) {
 
       kfPosAndSpeed.ukf.predict();
       Eigen::VectorXd measure(2);
-      measure(0) = data[1][row].value;
-      measure(1) = data[2][row].value;
+      measure(0) = data[8][row].value;
+      measure(1) = data[9][row].value;
       if (updateEvery == 0 || row % updateEvery == 0) {
         kfPosAndSpeed.ukf.update(measure);
       }
@@ -178,10 +212,20 @@ void Demo2::runKF(SimulationData &sim) {
       }
       kfPosSpeedAccel.ukf.setUserData(&dt);
 
-      kfPosSpeedAccel.ukf.predict();
-      Eigen::VectorXd measure(2);
-      measure(0) = data[1][row].value;
-      measure(1) = data[2][row].value;
+      Eigen::VectorXd inputs(3);
+      inputs(0) = data[1][row].value * 9.81;
+      inputs(1) = data[2][row].value * 9.81;
+      inputs(2) = data[3][row].value * M_PI / 180.0;
+
+      kfPosSpeedAccel.ukf.predict(inputs);
+      Eigen::VectorXd measure(6);
+      measure(0) = data[11][row].value;
+      measure(1) = data[12][row].value;
+      measure(2) = data[13][row].value;
+      measure(3) = data[14][row].value;
+      measure(4) = data[8][row].value;
+      measure(5) = data[9][row].value;
+      // measure(3) = data[10][row].value;
       if (updateEvery == 0 || row % updateEvery == 0) {
         kfPosSpeedAccel.ukf.update(measure);
       }
@@ -189,19 +233,49 @@ void Demo2::runKF(SimulationData &sim) {
       kfPosSpeedAccel.addStateAndCovariance(data[0][row]);
     }
   }
-  kfPosOnly.calculateResiduals("x", data[1]);
-  kfPosOnly.calculateResiduals("y", data[2]);
-  kfPosAndSpeed.calculateResiduals("x", data[1]);
-  kfPosAndSpeed.calculateResiduals("y", data[2]);
-  kfPosSpeedAccel.calculateResiduals("x", data[1]);
-  kfPosSpeedAccel.calculateResiduals("y", data[2]);
+  startRow = endRow;
+  if (endRow >= rows) {
+    startRow = 0;
+
+    kfPosOnly.calculateResiduals("x", data[8]);
+    kfPosOnly.calculateResiduals("y", data[9]);
+    kfPosAndSpeed.calculateResiduals("x", data[8]);
+    kfPosAndSpeed.calculateResiduals("y", data[9]);
+    kfPosSpeedAccel.calculateResiduals("x", data[8]);
+    kfPosSpeedAccel.calculateResiduals("y", data[9]);
+
+    return true;
+  } else {
+    return false;
+  }
 }
-void Demo2::draw(SimulationData &sim) {
+void Demo4::draw(SimulationData &sim) {
+  // time,
+  // accel.x,
+  // accel.y,
+  // gyro.z,
+  // brake.front,
+  // throttle,
+  // steer.angle,
+  // s,
+  // position.x, [8]
+  // position.y,
+  // position.heading,
+  // w_f.fl, [11]
+  // w_f.fr,
+  // w_rr.n_act_filt,
+  // w_rl.n_act_filt,
+  // gps.lon,
+  // gps.lat
+
   if (!ukfSimulated || lastSimCount != sim.simCount) {
+    static bool first = true;
     lastSimCount = sim.simCount;
-    ukfSimulated = true;
-    setupKF();
-    runKF(sim);
+    if (first) {
+      setupKF();
+    }
+    ukfSimulated = runKF(sim, 10);
+    first = ukfSimulated;
   }
   bool kfModified = false;
 
@@ -238,7 +312,7 @@ void Demo2::draw(SimulationData &sim) {
         ImPlot::SetupAxes("time", "position");
         ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
         ImPlot::PlotLine("real x", &sim.simulation.data[0][0].value,
-                         &sim.simulation.data[1][0].value,
+                         &sim.simulation.data[8][0].value,
                          sim.simulation.data[0].size(), 0, 0, sizeof(Real));
 
         plotKFState("kf1", "x", kfPosOnly);
@@ -250,7 +324,7 @@ void Demo2::draw(SimulationData &sim) {
         ImPlot::SetupAxes("time", "position");
         ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
         ImPlot::PlotLine("real y", &sim.simulation.data[0][0].value,
-                         &sim.simulation.data[2][0].value,
+                         &sim.simulation.data[9][0].value,
                          sim.simulation.data[0].size(), 0, 0, sizeof(Real));
 
         plotKFState("kf1", "y", kfPosOnly);
@@ -327,17 +401,12 @@ void Demo2::draw(SimulationData &sim) {
     ukfSimulated = false;
   }
 
-  if (ImPlot::BeginPlot("2D Cart position", reg, ImPlotFlags_Equal)) {
+  if (ImPlot::BeginPlot("Vehicle position", reg, ImPlotFlags_Equal)) {
     ImPlot::SetupAxes("x", "y");
 
-    ImPlot::PlotLine("x", &sim.simulation.data[1].front().value,
-                     &sim.simulation.data[2].front().value,
-                     sim.simulation.data.front().size(), 0, 0, sizeof(Real));
-
-    ImPlot::PlotScatter(
-        "x measured", &sim.simulation.dataWithNoise[1].front().value,
-        &sim.simulation.dataWithNoise[2].front().value,
-        sim.simulation.dataWithNoise.front().size(), 0, 0, sizeof(Real));
+    ImPlot::PlotLine("x", &sim.simulation.data[8].front().value,
+                     &sim.simulation.data[9].front().value,
+                     sim.simulation.data[0].size(), 0, 0, sizeof(Real));
 
     if (kfPosOnly.hasStates()) {
       ImPlot::PlotLine("kf1", &kfPosOnly.states[1][0].value,

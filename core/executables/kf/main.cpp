@@ -2,10 +2,12 @@
 #include <memory>
 
 #include "core/executables/kf/main_menu.hpp"
+#include "defines.hpp"
 #include "demos/1/demo_1.hpp"
 #include "app/app.hpp"
 #include "demos/2/demo_2.hpp"
 #include "demos/3/demo_3.hpp"
+#include "demos/4/demo_4.hpp"
 #include "imgui.h"
 #include "simulator/simulation_manager.hpp"
 #include "utils/time_base.hpp"
@@ -28,12 +30,36 @@ int main(void) {
   ImGui::GetIO().Fonts->AddFontFromFileTTF(FONTS_PATH "/fa-solid-900.ttf", 18,
                                            &icons_config, icons_ranges);
 
+  CSV skidpadCsv;
+  Simulation skidpad;
+  skidpadCsv.open(PROJECT_PATH "/csv_in/skidpad.csv", "r");
+  skidpad.data.clear();
+  skidpad.dataWithNoise.clear();
+  auto line = skidpadCsv.readLine();
+  while (true) {
+    line = skidpadCsv.readLine();
+    if (line.empty()) {
+      break;
+    }
+    rowToMatrix(skidpad.data, line);
+    for (size_t col = 0; col < line.size(); col++) {
+      if (skidpad.dataWithNoise.size() != line.size()) {
+        skidpad.dataWithNoise.resize(line.size());
+      }
+      skidpad.dataWithNoise[col].push_back(line[col].getWithNoise());
+    }
+  }
+  SimulationData skidpadD;
+  skidpadD.simulation = skidpad;
+  skidpadD.simCount++;
+
   std::shared_ptr<Demo1> demo1 = std::make_shared<Demo1>();
   std::shared_ptr<Demo2> demo2 = std::make_shared<Demo2>();
   std::shared_ptr<Demo3> demo3 = std::make_shared<Demo3>();
+  std::shared_ptr<Demo4> demo4 = std::make_shared<Demo4>();
 
   Simulator simulator;
-  simulator.setSystems({demo1, demo2, demo3});
+  simulator.setSystems({demo1, demo2, demo3, demo4});
 
   SimulationManager simulationManager;
   simulationManager.simulateAll();
@@ -68,6 +94,10 @@ int main(void) {
         }
         if (ImGui::BeginTabItem("Demo 3")) {
           demo3->draw(simulationManager.getByName("Ball"));
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Demo 4")) {
+          demo4->draw(skidpadD);
           ImGui::EndTabItem();
         }
         ImGui::EndTabBar();

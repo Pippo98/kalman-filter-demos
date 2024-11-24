@@ -12,7 +12,7 @@
 inline void drawCSVTable(const char *id,
                          const std::vector<std::vector<Real>> &values,
                          ImVec2 size) {
-  if (!values.empty() &&
+  if (!values.empty() && !values.front().empty() &&
       ImGui::BeginTable(id, values.size(),
                         ImGuiTableFlags_ScrollY | ImGuiTableFlags_RowBg |
                             ImGuiTableFlags_Borders |
@@ -86,11 +86,14 @@ class CSV {
       if (c == ',' || c == '\n') {
         if (header.empty()) {
           auto pos = cell.find('@');
-          assert(pos != std::string::npos);
-          std::string name = cell.substr(0, pos);
-          std::string stdStr = cell.substr(pos + 1);
-          row.push_back(
-              Real(name.c_str(), std::strtod(stdStr.c_str(), nullptr)));
+          if (pos == std::string::npos) {
+            row.push_back(Real(cell.c_str(), 0.0));
+          } else {
+            std::string name = cell.substr(0, pos);
+            std::string stdStr = cell.substr(pos + 1);
+            row.push_back(
+                Real(name.c_str(), std::strtod(stdStr.c_str(), nullptr)));
+          }
         } else {
           row[column].value = std::strtod(cell.c_str(), nullptr);
         }

@@ -29,6 +29,7 @@ target_sources(demos
     ${CDIR}/src/demos/1/demo_1.cpp
     ${CDIR}/src/demos/2/demo_2.cpp
     ${CDIR}/src/demos/3/demo_3.cpp
+    ${CDIR}/src/demos/4/demo_4.cpp
 )
 target_link_libraries(demos PUBLIC kflib)
 
