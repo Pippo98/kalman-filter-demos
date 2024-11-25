@@ -274,7 +274,7 @@ void Demo4::draw(SimulationData &sim) {
     if (first) {
       setupKF();
     }
-    ukfSimulated = runKF(sim, 100);
+    ukfSimulated = runKF(sim, 50);
     first = ukfSimulated;
   }
   bool kfModified = false;
