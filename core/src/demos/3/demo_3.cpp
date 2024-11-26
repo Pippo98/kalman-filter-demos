@@ -34,7 +34,7 @@ Demo3::Demo3() {
     kf.Q(5, 5) = 0.00001;
     kf.R(0, 0) = 0.1;
     kf.R(1, 1) = 0.1;
-    kf.ukf.setMerweScaledSigmaPointsParams(1.0, 2.0, 3.0 - 6.0);
+    kf.ukf.setMerweScaledSigmaPointsParams(0.1, 2.0, -1.0);
   }
 }
 void Demo3::setupKF() {

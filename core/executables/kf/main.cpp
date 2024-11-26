@@ -9,6 +9,7 @@
 #include "demos/2/demo_2.hpp"
 #include "demos/3/demo_3.hpp"
 #include "demos/4/demo_4.hpp"
+#include "demos/s1/demo_sigma_points.hpp"
 #include "imgui.h"
 #include "kflib/src/ukf.hpp"
 #include "simulator/simulation_manager.hpp"
@@ -55,6 +56,7 @@ int main(void) {
   skidpadD.simulation = skidpad;
   skidpadD.simCount++;
 
+  DemoSigmaPoints demoSigmaPoints;
   std::shared_ptr<Demo1> demo1 = std::make_shared<Demo1>();
   std::shared_ptr<Demo2> demo2 = std::make_shared<Demo2>();
   std::shared_ptr<Demo3> demo3 = std::make_shared<Demo3>();
@@ -100,6 +102,10 @@ int main(void) {
         }
         if (ImGui::BeginTabItem("Demo 4")) {
           demo4->draw(skidpadD);
+          ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Sigma Points")) {
+          demoSigmaPoints.draw();
           ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
