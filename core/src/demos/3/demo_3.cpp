@@ -30,17 +30,32 @@ Demo3::Demo3() {
     kf.Q(1, 1) = 0.01;
     kf.Q(2, 2) = 0.01;
     kf.Q(3, 3) = 0.01;
-    kf.Q(4, 4) = 0.0001;
-    kf.Q(5, 5) = 0.0001;
+    kf.Q(4, 4) = 0.00001;
+    kf.Q(5, 5) = 0.00001;
     kf.R(0, 0) = 0.1;
     kf.R(1, 1) = 0.1;
-    // kf.ukf.setMerweScaledSigmaPointsParams(1e-2, 2.0);
+    kf.ukf.setMerweScaledSigmaPointsParams(1.0, 2.0, 3.0 - 6.0);
   }
 }
 void Demo3::setupKF() {
   {
     auto &ukf = kf.ukf;
     kf.setMatrices();
+
+    ukf.setStateConstraintsFunction([](const Eigen::VectorXd &state,
+                                       const Eigen::VectorXd &input,
+                                       void *userData) -> Eigen::VectorXd {
+      auto constrainedState = state;
+      auto constr = [](double value) {
+        if (value < 0.0) {
+          return value * 0.7;
+        }
+        return value * 0.9;
+      };
+      constrainedState(4) = constr(state(4));
+      constrainedState(5) = constr(state(5));
+      return constrainedState;
+    });
     ukf.setStateUpdateFunction([](const Eigen::VectorXd &state,
                                   const Eigen::VectorXd &input,
                                   void *userData) -> Eigen::VectorXd {
@@ -48,35 +63,17 @@ void Demo3::setupKF() {
       (void)userData;
       double dt = *(double *)userData;
       auto newState = state;
-      auto prevState = state;
-      prevState(4) = 0.0;  // std::max(prevState(4), 0.0);
-      prevState(5) = std::max(prevState(5), 0.0);
 
-      std::cout << "-" << std::endl;
-      // std::cout << state << std::endl;
-
-      double vg =
-          std::sqrt(prevState(2) * prevState(2) + prevState(3) * prevState(3));
-      double visc = vg * prevState(4);
-      double aero = vg * vg * prevState(5);
-      int xsign = (prevState(2) > 0 ? 1 : -1);
-      int ysign = (prevState(3) > 0 ? 1 : -1);
-      double cx = 0.0, cy = 0.0;
-      if (vg > 0.01) {
-        cx = -std::clamp(prevState(2) / vg, -1.0, 1.0);
-        cy = -std::clamp(prevState(3) / vg, -1.0, 1.0);
-      }
-
-      newState(0) = prevState(0) + dt * prevState(2);
-      newState(1) = prevState(1) + dt * prevState(3);
-      newState(2) = prevState(2) + dt * (visc + aero) * cx;
-      newState(3) = prevState(3) + dt * (visc + aero) * cy + dt * CONST_G;
-      newState(4) = prevState(4);
-      newState(5) = prevState(5);
-
-      for (int i = 0; i < 6; i++) {
-        std::cout << state(i) << "\t" << newState(i) << std::endl;
-      }
+      newState(0) = state(0) + dt * state(2);
+      newState(1) = state(1) + dt * state(3);
+      newState(2) = state(2) + dt * (-state(4) * state(2) -
+                                     state(5) * std::abs(state(2)) * state(2));
+      newState(3) = state(3) +
+                    dt * (-state(4) * state(3) -
+                          state(5) * std::abs(state(3)) * state(3)) +
+                    dt * CONST_G;
+      newState(4) = state(4);
+      newState(5) = state(5);
 
       return newState;
     });
@@ -105,7 +102,6 @@ void Demo3::runKF(SimulationData &sim) {
       }
       kf.ukf.setUserData(&dt);
 
-      printf("-------------\n");
       kf.ukf.predict();
 
       bool obstructed =
