@@ -30,11 +30,11 @@ Demo3::Demo3() {
     kf.Q(1, 1) = 0.01;
     kf.Q(2, 2) = 0.01;
     kf.Q(3, 3) = 0.01;
-    kf.Q(4, 4) = 0.00001;
-    kf.Q(5, 5) = 0.00001;
+    kf.Q(4, 4) = 0.000001;
+    kf.Q(5, 5) = 0.000001;
     kf.R(0, 0) = 0.1;
     kf.R(1, 1) = 0.1;
-    kf.ukf.setMerweScaledSigmaPointsParams(0.1, 2.0, -1.0);
+    kf.ukf.setMerweScaledSigmaPointsParams(0.05, 2.0, -1.0);
   }
 }
 void Demo3::setupKF() {
@@ -45,15 +45,21 @@ void Demo3::setupKF() {
     ukf.setStateConstraintsFunction([](const Eigen::VectorXd &state,
                                        const Eigen::VectorXd &input,
                                        void *userData) -> Eigen::VectorXd {
+      (void)input;
+      (void)userData;
       auto constrainedState = state;
       auto constr = [](double value) {
         if (value < 0.0) {
           return value * 0.7;
         }
-        return value * 0.9;
+        return value * 1.0;
       };
       constrainedState(4) = constr(state(4));
       constrainedState(5) = constr(state(5));
+      // constrainedState(4) = std::max(state(4), 0.0);
+      // constrainedState(5) = std::max(state(5), 0.0);
+      // constrainedState(4) = state(4);
+      // constrainedState(5) = state(5);
       return constrainedState;
     });
     ukf.setStateUpdateFunction([](const Eigen::VectorXd &state,
@@ -117,9 +123,9 @@ void Demo3::runKF(SimulationData &sim) {
 
       kf.addStateAndCovariance(data[0][row]);
     }
+    kf.calculateResiduals("x", data[1]);
+    kf.calculateResiduals("y", data[2]);
   }
-  kf.calculateResiduals("x", data[1]);
-  kf.calculateResiduals("y", data[2]);
 }
 void Demo3::draw(SimulationData &sim) {
   if (!ukfSimulated || lastSimCount != sim.simCount) {
