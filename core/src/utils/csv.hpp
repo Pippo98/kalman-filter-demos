@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "type_and_name.hpp"
 #include "raii_file.hpp"
+#include "utils/styles.hpp"
 
 inline void drawCSVTable(const char *id,
                          const std::vector<std::vector<Real>> &values,
@@ -22,7 +23,11 @@ inline void drawCSVTable(const char *id,
       ImGui::TableSetupColumn(col.front().name.c_str());
     }
     ImGui::TableSetupScrollFreeze(values.size(), 1);
+    ImGui::PushStyleColor(ImGuiCol_Text, DRACULA_ACCENT);
+    ImGui::PushFont(font_H3);
     ImGui::TableHeadersRow();
+    ImGui::PopFont();
+    ImGui::PopStyleColor();
 
     auto rows = values.front().size();
     for (size_t row = 0; row < rows; row++) {

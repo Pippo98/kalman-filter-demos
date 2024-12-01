@@ -3,6 +3,14 @@
 #include "imgui.h"
 #include "implot.h"
 
+extern ImFont *font_H1;
+extern ImFont *font_H2;
+extern ImFont *font_H3;
+extern ImFont *font_text;
+
+#define DRACULA_ACCENT \
+  ImVec4 { 0.74f, 0.58f, 0.98f, 1.0f }
+
 inline void AddChronographPalettes() {
   ImVec4 Colormap6[6];
   bool discrete = false;

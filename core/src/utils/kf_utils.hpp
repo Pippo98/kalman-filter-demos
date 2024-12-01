@@ -87,23 +87,59 @@ struct KFData {
 
 template <typename EigenVecOrMatrix>
 bool drawMatrix(const char *id, EigenVecOrMatrix &mat,
+                const std::vector<std::string> &colNames,
                 ImVec2 size = ImVec2(0.0f, 0.0f)) {
   bool modified = false;
   ImGui::BeginGroup();
   ImGui::TextUnformatted(id);
-  if (ImGui::BeginTable(id, mat.cols(), ImGuiTableFlags_Borders, size)) {
+  bool showColNames = !colNames.empty() &&
+                      std::is_same<EigenVecOrMatrix, Eigen::MatrixXd>::value;
+  if (size.y == 0.0) {
+    ImGui::PushFont(font_H3);
+    size.y = showColNames *
+                 (ImGui::GetFrameHeight() + ImGui::GetStyle().CellPadding.y) +
+             mat.rows() * (ImGui::GetTextLineHeight() +
+                           ImGui::GetStyle().CellPadding.y *
+                               (2.0f + (showColNames ? 0.0 : 1.0)));
+    ImGui::PopFont();
+  }
+  if (ImGui::BeginTable(id, mat.cols() + 1,
+                        ImGuiTableFlags_Borders | ImGuiTableFlags_ScrollX |
+                            ImGuiTableFlags_HighlightHoveredColumn,
+                        size)) {
+    if (showColNames) {
+      ImGui::TableSetupColumn("");
+      for (const auto &col : colNames) {
+        ImGui::TableSetupColumn(col.c_str());
+      }
+      ImGui::TableSetupScrollFreeze(1, 1);
+      ImGui::PushStyleColor(ImGuiCol_Text, DRACULA_ACCENT);
+      ImGui::PushFont(font_H3);
+      ImGui::TableHeadersRow();
+      ImGui::PopFont();
+      ImGui::PopStyleColor();
+    }
     for (int row = 0; row < mat.rows(); row++) {
       ImGui::PushID(row);
       ImGui::TableNextRow();
-      for (int col = 0; col < mat.cols(); col++) {
+      for (int col = -1; col < mat.cols(); col++) {
         ImGui::PushID(col);
         ImGui::TableNextColumn();
-        ImGui::SetNextItemWidth(100);
-        if (ImGui::InputDouble("##cell", &mat(row, col))) {
-          modified = true;
-        }
-        if (mat.cols() == mat.rows()) {
-          mat(col, row) = mat(row, col);
+
+        if (col == -1) {
+          ImGui::PushStyleColor(ImGuiCol_Text, DRACULA_ACCENT);
+          ImGui::PushFont(font_H3);
+          ImGui::TextUnformatted(colNames[row].c_str());
+          ImGui::PopFont();
+          ImGui::PopStyleColor();
+        } else {
+          ImGui::SetNextItemWidth(120);
+          if (ImGui::InputDouble("##cell", &mat(row, col), 0.1, 1.0, "%0.6f")) {
+            modified = true;
+          }
+          if (mat.cols() == mat.rows()) {
+            mat(col, row) = mat(row, col);
+          }
         }
         ImGui::PopID();
       }
@@ -126,14 +162,17 @@ inline bool drawKFData(KFData &kfData) {
   }
 
   if (ImGui::CollapsingHeader("Matrices")) {
-    kfModified |= drawMatrix("Initial State", kfData.X0, {reg.x / 4.0f, 0.0f});
+    kfModified |= drawMatrix("Initial State", kfData.X0, kfData.statesNames,
+                             {reg.x / 4.0f, 0.0f});
     ImGui::SameLine();
-    kfModified |=
-        drawMatrix("Initial State Cov", kfData.P0, {reg.x / 4.0f, 0.0f});
+    kfModified |= drawMatrix("Initial State Cov", kfData.P0, kfData.statesNames,
+                             {reg.x / 4.0f, 0.0f});
     ImGui::SameLine();
-    kfModified |= drawMatrix("Process Cov", kfData.Q, {reg.x / 4.0f, 0.0f});
+    kfModified |= drawMatrix("Process Cov", kfData.Q, kfData.statesNames,
+                             {reg.x / 4.0f, 0.0f});
     ImGui::SameLine();
-    kfModified |= drawMatrix("Measurement Cov", kfData.R, {reg.x / 4.0f, 0.0f});
+    kfModified |= drawMatrix("Measurement Cov", kfData.R,
+                             kfData.measurementsNames, {reg.x / 4.0f, 0.0f});
   }
 
   return kfModified;

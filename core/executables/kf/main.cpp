@@ -11,11 +11,17 @@
 #include "demos/4/demo_4.hpp"
 #include "demos/s1/demo_sigma_points.hpp"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "kflib/src/ukf.hpp"
 #include "simulator/simulation_manager.hpp"
 #include "utils/time_base.hpp"
 #include "utils/styles.hpp"
 #include "resources/fonts/font_awesome.h"
+
+ImFont *font_H1;
+ImFont *font_H2;
+ImFont *font_H3;
+ImFont *font_text;
 
 int main(void) {
   App app("KF Demos");
@@ -23,8 +29,14 @@ int main(void) {
   app.Open();
   Dracula();
 
-  ImGui::GetIO().Fonts->AddFontFromFileTTF(
+  font_text = ImGui::GetIO().Fonts->AddFontFromFileTTF(
       FONTS_PATH "/JetBrainsMonoNerdFont-Regular.ttf", 18);
+  font_H1 = ImGui::GetIO().Fonts->AddFontFromFileTTF(
+      FONTS_PATH "/JetBrainsMonoNerdFont-Regular.ttf", 28);
+  font_H2 = ImGui::GetIO().Fonts->AddFontFromFileTTF(
+      FONTS_PATH "/JetBrainsMonoNerdFont-Regular.ttf", 24);
+  font_H3 = ImGui::GetIO().Fonts->AddFontFromFileTTF(
+      FONTS_PATH "/JetBrainsMonoNerdFont-Regular.ttf", 22);
 
   static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_FA, 0};
   ImFontConfig icons_config;
