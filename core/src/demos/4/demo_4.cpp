@@ -401,29 +401,55 @@ void Demo4::draw(SimulationData &sim) {
     ukfSimulated = false;
   }
 
+  static bool scatter = false, line = false;
+  ImGui::Checkbox("Show line plot", &line);
+  ImGui::Checkbox("Show scatter plot", &scatter);
+
   if (ImPlot::BeginPlot("Vehicle position", reg, ImPlotFlags_Equal)) {
     ImPlot::SetupAxes("x", "y");
 
-    ImPlot::PlotLine("x", &sim.simulation.data[8].front().value,
+    ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+    ImPlot::PlotLine("GPS", &sim.simulation.data[8].front().value,
                      &sim.simulation.data[9].front().value,
                      sim.simulation.data[0].size(), 0, 0, sizeof(Real));
 
     if (kfPosOnly.hasStates()) {
-      ImPlot::PlotLine("kf1", &kfPosOnly.states[1][0].value,
-                       &kfPosOnly.states[2][0].value,
-                       kfPosOnly.states[0].size(), 0, 0, sizeof(Real));
+      if (line) {
+        ImPlot::PlotLine("kf1", &kfPosOnly.states[1][0].value,
+                         &kfPosOnly.states[2][0].value,
+                         kfPosOnly.states[0].size(), 0, 0, sizeof(Real));
+      }
+      if (scatter) {
+        ImPlot::PlotScatter("kf1", &kfPosOnly.states[1][0].value,
+                            &kfPosOnly.states[2][0].value,
+                            kfPosOnly.states[0].size(), 0, 0, sizeof(Real));
+      }
     }
     if (kfPosAndSpeed.hasStates()) {
-      ImPlot::PlotLine("kf2", &kfPosAndSpeed.states[1][0].value,
-                       &kfPosAndSpeed.states[2][0].value,
-                       kfPosAndSpeed.states[0].size(), 0, 0, sizeof(Real));
+      if (line) {
+        ImPlot::PlotLine("kf2", &kfPosAndSpeed.states[1][0].value,
+                         &kfPosAndSpeed.states[2][0].value,
+                         kfPosAndSpeed.states[0].size(), 0, 0, sizeof(Real));
+      }
+      if (scatter) {
+        ImPlot::PlotScatter("kf2", &kfPosAndSpeed.states[1][0].value,
+                            &kfPosAndSpeed.states[2][0].value,
+                            kfPosAndSpeed.states[0].size(), 0, 0, sizeof(Real));
+      }
     }
     if (kfPosSpeedAccel.hasStates()) {
-      ImPlot::PlotLine("kf3", &kfPosSpeedAccel.states[1][0].value,
-                       &kfPosSpeedAccel.states[2][0].value,
-                       kfPosSpeedAccel.states[0].size(), 0, 0, sizeof(Real));
+      if (line) {
+        ImPlot::PlotLine("kf3", &kfPosSpeedAccel.states[1][0].value,
+                         &kfPosSpeedAccel.states[2][0].value,
+                         kfPosSpeedAccel.states[0].size(), 0, 0, sizeof(Real));
+      }
+      if (scatter) {
+        ImPlot::PlotScatter("kf3", &kfPosSpeedAccel.states[1][0].value,
+                            &kfPosSpeedAccel.states[2][0].value,
+                            kfPosSpeedAccel.states[0].size(), 0, 0,
+                            sizeof(Real));
+      }
     }
-
     ImPlot::EndPlot();
   }
 }

@@ -139,14 +139,15 @@ void Demo1::draw(SimulationData &sim) {
     if (ImPlot::BeginPlot("position", ImVec2(-1, 0), ImPlotFlags_NoTitle)) {
       ImPlot::SetupAxes("time", "position");
 
-      ImPlot::PlotLine("x", &sim.simulation.data[0][0].value,
+      ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+      ImPlot::PlotLine("Real", &sim.simulation.data[0][0].value,
                        &sim.simulation.data[1][0].value,
                        sim.simulation.data.front().size(), 0, 0, sizeof(Real));
 
-      ImPlot::PlotScatter(
-          "x measured", &sim.simulation.dataWithNoise[0][0].value,
-          &sim.simulation.dataWithNoise[1][0].value,
-          sim.simulation.dataWithNoise[0].size(), 0, 0, sizeof(Real));
+      ImPlot::PlotScatter("Measured", &sim.simulation.dataWithNoise[0][0].value,
+                          &sim.simulation.dataWithNoise[1][0].value,
+                          sim.simulation.dataWithNoise[0].size(), 0, 0,
+                          sizeof(Real));
 
       if (kfPosOnly.hasStates()) {
         ImPlot::SetNextLineStyle(IMPLOT_AUTO_COL, 2.0);

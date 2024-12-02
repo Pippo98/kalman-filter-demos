@@ -330,12 +330,13 @@ void Demo2::draw(SimulationData &sim) {
   if (ImPlot::BeginPlot("2D Cart position", reg, ImPlotFlags_Equal)) {
     ImPlot::SetupAxes("x", "y");
 
-    ImPlot::PlotLine("x", &sim.simulation.data[1].front().value,
+    ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+    ImPlot::PlotLine("Real", &sim.simulation.data[1].front().value,
                      &sim.simulation.data[2].front().value,
                      sim.simulation.data.front().size(), 0, 0, sizeof(Real));
 
     ImPlot::PlotScatter(
-        "x measured", &sim.simulation.dataWithNoise[1].front().value,
+        "Measured", &sim.simulation.dataWithNoise[1].front().value,
         &sim.simulation.dataWithNoise[2].front().value,
         sim.simulation.dataWithNoise.front().size(), 0, 0, sizeof(Real));
 

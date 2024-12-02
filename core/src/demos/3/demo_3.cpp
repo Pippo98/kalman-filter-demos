@@ -232,12 +232,13 @@ void Demo3::draw(SimulationData &sim) {
       ImPlot::BeginPlot("Ball position", reg, ImPlotFlags_Equal)) {
     ImPlot::SetupAxes("x", "y");
 
-    ImPlot::PlotLine("x", &sim.simulation.data[1].front().value,
+    ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+    ImPlot::PlotLine("Real", &sim.simulation.data[1].front().value,
                      &sim.simulation.data[2].front().value,
                      sim.simulation.data.front().size(), 0, 0, sizeof(Real));
 
     ImPlot::PlotScatter(
-        "x measured", &sim.simulation.dataWithNoise[1].front().value,
+        "Measured", &sim.simulation.dataWithNoise[1].front().value,
         &sim.simulation.dataWithNoise[2].front().value,
         sim.simulation.dataWithNoise.front().size(), 0, 0, sizeof(Real));
 

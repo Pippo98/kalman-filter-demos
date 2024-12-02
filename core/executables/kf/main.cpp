@@ -99,7 +99,7 @@ int main(void) {
           demo4->draw(skidpadD);
           ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem("Sigma Points")) {
+        if (ImGui::BeginTabItem("Extra")) {
           demoSigmaPoints.draw();
           ImGui::EndTabItem();
         }
