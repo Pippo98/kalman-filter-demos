@@ -395,13 +395,43 @@ void Demo4::draw(SimulationData &sim) {
 
       ImPlot::EndSubplots();
     }
+
+    if (ImPlot::BeginPlot("Velocity")) {
+      ImPlot::SetupAxes("time", "speed [m/s]");
+
+      ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+      plotKFState("kf3", "u", kfPosSpeedAccel);
+      auto w_fl = sim.simulation.data[11];
+      auto w_fr = sim.simulation.data[12];
+      auto w_rl = sim.simulation.data[13];
+      auto w_rr = sim.simulation.data[14];
+      for (size_t i = 0; i < sim.simulation.data[0].size(); i++) {
+        double Rf = 0.1957;
+        double Rr = 0.1918;
+        w_fl[i].value *= Rf;
+        w_fr[i].value *= Rf;
+        w_rl[i].value *= Rr;
+        w_rr[i].value *= Rr;
+      }
+
+      ImPlot::PlotLine("w fl", &sim.simulation.data[0][0].value, &w_fl[0].value,
+                       sim.simulation.data[0].size(), 0, 0, sizeof(Real));
+      ImPlot::PlotLine("w fr", &sim.simulation.data[0][0].value, &w_fr[0].value,
+                       sim.simulation.data[0].size(), 0, 0, sizeof(Real));
+      ImPlot::PlotLine("w rl", &sim.simulation.data[0][0].value, &w_rl[0].value,
+                       sim.simulation.data[0].size(), 0, 0, sizeof(Real));
+      ImPlot::PlotLine("w rr", &sim.simulation.data[0][0].value, &w_rr[0].value,
+                       sim.simulation.data[0].size(), 0, 0, sizeof(Real));
+
+      ImPlot::EndPlot();
+    }
   }
 
   if (kfModified) {
     ukfSimulated = false;
   }
 
-  static bool scatter = false, line = false;
+  static bool scatter = false, line = true;
   ImGui::Checkbox("Show line plot", &line);
   ImGui::Checkbox("Show scatter plot", &scatter);
 
