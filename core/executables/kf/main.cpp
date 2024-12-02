@@ -45,25 +45,8 @@ int main(void) {
   ImGui::GetIO().Fonts->AddFontFromFileTTF(FONTS_PATH "/fa-solid-900.ttf", 18,
                                            &icons_config, icons_ranges);
 
-  CSV skidpadCsv;
-  Simulation skidpad;
-  skidpadCsv.open(PROJECT_PATH "/csv_in/skidpad.csv", "r");
-  skidpad.data.clear();
-  skidpad.dataWithNoise.clear();
-  auto line = skidpadCsv.readLine();
-  while (true) {
-    line = skidpadCsv.readLine();
-    if (line.empty()) {
-      break;
-    }
-    rowToMatrix(skidpad.data, line);
-    for (size_t col = 0; col < line.size(); col++) {
-      if (skidpad.dataWithNoise.size() != line.size()) {
-        skidpad.dataWithNoise.resize(line.size());
-      }
-      skidpad.dataWithNoise[col].push_back(line[col].getWithNoise());
-    }
-  }
+  Simulation skidpad("skidpad");
+  loadSimulation(skidpad);
   SimulationData skidpadD;
   skidpadD.simulation = skidpad;
   skidpadD.simCount++;

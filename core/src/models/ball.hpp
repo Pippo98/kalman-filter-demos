@@ -16,11 +16,8 @@ class Ball : public Simulatable {
     t = t + dt;
     x = x + vx * dt;
     y = y + vy * dt;
-    double Vg = std::sqrt(vx * vx + vy * vy);
-    double viscous = c * Vg;
-    double aero = Cd * Vg * Vg;
-    vx = vx.value + (viscous * dt + aero * dt) * (vx > 0 ? -1 : 1);
-    vy = vy + CONST_G * dt + (viscous * dt + aero * dt) * (vy > 0 ? -1 : 1);
+    vx = vx.value - (c * vx + Cd * std::abs(vx) * vx) * dt;
+    vy = vy + CONST_G * dt - (c * vy + Cd * std::abs(vy) * vy) * dt;
     if (y <= 0) {
       y = 0.0;
       vy = 0.0;
