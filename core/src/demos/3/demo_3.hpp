@@ -23,6 +23,7 @@ class Demo3 : public Simulatable {
   size_t lastSimCount = 0;
   int updateEvery = 0;
   KFData kf;
+  KFData kf2;
 
   double obstructionCoords[2];
   bool obstructedView = false;

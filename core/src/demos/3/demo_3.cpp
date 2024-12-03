@@ -36,61 +36,105 @@ Demo3::Demo3() {
     kf.R(1, 1) = 0.1;
     kf.ukf.setMerweScaledSigmaPointsParams(0.05, 2.0, -1.0);
   }
+  {
+    kf2.initializeMatrices({"x", "y", "vx", "vy", "c", "Cd"}, {"x", "y", "Vg"});
+    kf2.X0(0) = 0.0;
+    kf2.X0(1) = 0.0;
+    kf2.X0(2) = 0.0;
+    kf2.X0(3) = 0.0;
+    kf2.X0(4) = 0.0;
+    kf2.X0(5) = 0.0;
+    kf2.P0(0, 0) = 1e1;
+    kf2.P0(1, 1) = 1e1;
+    kf2.P0(2, 2) = 1e2;
+    kf2.P0(3, 3) = 1e2;
+    kf2.P0(4, 4) = 0.01;
+    kf2.P0(5, 5) = 0.01;
+    kf2.Q(0, 0) = 0.01;
+    kf2.Q(1, 1) = 0.01;
+    kf2.Q(2, 2) = 0.01;
+    kf2.Q(3, 3) = 0.01;
+    kf2.Q(4, 4) = 0.000001;
+    kf2.Q(5, 5) = 0.000001;
+    kf2.R(0, 0) = 0.1;
+    kf2.R(1, 1) = 0.1;
+    kf2.R(2, 2) = 0.1;
+    kf2.ukf.setMerweScaledSigmaPointsParams(0.05, 2.0, -1.0);
+  }
 }
 void Demo3::setupKF() {
+  const auto constraintFunc = [](const Eigen::VectorXd &state,
+                                 const Eigen::VectorXd &input,
+                                 void *userData) -> Eigen::VectorXd {
+    (void)input;
+    (void)userData;
+    auto constrainedState = state;
+    auto constr = [](double value) {
+      if (value < 0.0) {
+        return value * 0.7;
+      }
+      return value * 1.0;
+    };
+    constrainedState(4) = constr(state(4));
+    constrainedState(5) = constr(state(5));
+    // constrainedState(4) = std::max(state(4), 0.0);
+    // constrainedState(5) = std::max(state(5), 0.0);
+    // constrainedState(4) = state(4);
+    // constrainedState(5) = state(5);
+    return constrainedState;
+  };
+  const auto stateFunc = [](const Eigen::VectorXd &state,
+                            const Eigen::VectorXd &input,
+                            void *userData) -> Eigen::VectorXd {
+    (void)input;
+    (void)userData;
+    double dt = *(double *)userData;
+    auto newState = state;
+
+    newState(0) = state(0) + dt * state(2);
+    newState(1) = state(1) + dt * state(3);
+    newState(2) = state(2) + dt * (-state(4) * state(2) -
+                                   state(5) * std::abs(state(2)) * state(2));
+    newState(3) =
+        state(3) +
+        dt * (-state(4) * state(3) - state(5) * std::abs(state(3)) * state(3)) +
+        dt * CONST_G;
+    newState(4) = state(4);
+    newState(5) = state(5);
+
+    return newState;
+  };
+  const auto measurementFunc = [](const Eigen::VectorXd &state,
+                                  const Eigen::VectorXd &input,
+                                  void *userData) -> Eigen::VectorXd {
+    (void)input;
+    (void)userData;
+    Eigen::VectorXd measures(2);
+    measures(0) = state(0);
+    measures(1) = state(1);
+    return measures;
+  };
   {
     auto &ukf = kf.ukf;
     kf.setMatrices();
 
-    ukf.setStateConstraintsFunction([](const Eigen::VectorXd &state,
-                                       const Eigen::VectorXd &input,
-                                       void *userData) -> Eigen::VectorXd {
+    ukf.setStateConstraintsFunction(constraintFunc);
+    ukf.setStateUpdateFunction(stateFunc);
+    ukf.setMeasurementFunction(measurementFunc);
+  }
+  {
+    kf2.setMatrices();
+    kf2.ukf.setStateConstraintsFunction(constraintFunc);
+    kf2.ukf.setStateUpdateFunction(stateFunc);
+    kf2.ukf.setMeasurementFunction([](const Eigen::VectorXd &state,
+                                      const Eigen::VectorXd &input,
+                                      void *userData) -> Eigen::VectorXd {
       (void)input;
       (void)userData;
-      auto constrainedState = state;
-      auto constr = [](double value) {
-        if (value < 0.0) {
-          return value * 0.7;
-        }
-        return value * 1.0;
-      };
-      constrainedState(4) = constr(state(4));
-      constrainedState(5) = constr(state(5));
-      // constrainedState(4) = std::max(state(4), 0.0);
-      // constrainedState(5) = std::max(state(5), 0.0);
-      // constrainedState(4) = state(4);
-      // constrainedState(5) = state(5);
-      return constrainedState;
-    });
-    ukf.setStateUpdateFunction([](const Eigen::VectorXd &state,
-                                  const Eigen::VectorXd &input,
-                                  void *userData) -> Eigen::VectorXd {
-      (void)input;
-      (void)userData;
-      double dt = *(double *)userData;
-      auto newState = state;
-
-      newState(0) = state(0) + dt * state(2);
-      newState(1) = state(1) + dt * state(3);
-      newState(2) = state(2) + dt * (-state(4) * state(2) -
-                                     state(5) * std::abs(state(2)) * state(2));
-      newState(3) = state(3) +
-                    dt * (-state(4) * state(3) -
-                          state(5) * std::abs(state(3)) * state(3)) +
-                    dt * CONST_G;
-      newState(4) = state(4);
-      newState(5) = state(5);
-
-      return newState;
-    });
-    ukf.setMeasurementFunction([](const Eigen::VectorXd &state,
-                                  const Eigen::VectorXd &input,
-                                  void *userData) -> Eigen::VectorXd {
-      (void)input;
-      (void)userData;
-      Eigen::VectorXd measures(2);
+      Eigen::VectorXd measures(3);
       measures(0) = state(0);
       measures(1) = state(1);
+      measures(2) = std::sqrt(state(2) * state(2) + state(3) * state(3));
       return measures;
     });
   }
@@ -100,6 +144,7 @@ void Demo3::runKF(SimulationData &sim) {
   size_t rows = data.front().size();
 
   kf.clearData();
+  kf2.clearData();
   for (size_t row = 0; row < rows; row++) {
     {
       double dt = 0.0;
@@ -107,8 +152,10 @@ void Demo3::runKF(SimulationData &sim) {
         dt = data[0][row] - data[0][row - 1];
       }
       kf.ukf.setUserData(&dt);
+      kf2.ukf.setUserData(&dt);
 
       kf.ukf.predict();
+      kf2.ukf.predict();
 
       bool obstructed =
           obstructedView && (data[1][row] > obstructionCoords[0] &&
@@ -120,11 +167,23 @@ void Demo3::runKF(SimulationData &sim) {
       if ((updateEvery == 0 || row % updateEvery == 0) && !obstructed) {
         kf.ukf.update(measure);
       }
+      Eigen::VectorXd measure2(2);
+      measure2(0) = data[1][row].value;
+      measure2(1) = data[2][row].value;
+      double vx = data[3][row].value;
+      double vy = data[4][row].value;
+      measure2(2) = std::sqrt(vx * vx + vy * vy);
+      if ((updateEvery == 0 || row % updateEvery == 0) && !obstructed) {
+        kf2.ukf.update(measure);
+      }
 
       kf.addStateAndCovariance(data[0][row]);
+      kf2.addStateAndCovariance(data[0][row]);
     }
     kf.calculateResiduals("x", data[1]);
     kf.calculateResiduals("y", data[2]);
+    kf2.calculateResiduals("x", data[1]);
+    kf2.calculateResiduals("y", data[2]);
   }
 }
 void Demo3::draw(SimulationData &sim) {
@@ -145,6 +204,10 @@ void Demo3::draw(SimulationData &sim) {
   if (ImGui::BeginTabBar("KF settings")) {
     if (ImGui::BeginTabItem("KF position")) {
       kfModified |= drawKFData(kf);
+      ImGui::EndTabItem();
+    }
+    if (ImGui::BeginTabItem("KF position with more measures")) {
+      kfModified |= drawKFData(kf2);
       ImGui::EndTabItem();
     }
     ImGui::EndTabBar();
@@ -250,9 +313,12 @@ void Demo3::draw(SimulationData &sim) {
     }
 
     if (kf.hasStates()) {
-      ImPlot::PlotLine("estimated", &kf.states[1][0].value,
-                       &kf.states[2][0].value, kf.states[0].size(), 0, 0,
-                       sizeof(Real));
+      ImPlot::PlotLine("kf1", &kf.states[1][0].value, &kf.states[2][0].value,
+                       kf.states[0].size(), 0, 0, sizeof(Real));
+    }
+    if (kf2.hasStates()) {
+      ImPlot::PlotLine("kf2", &kf2.states[1][0].value, &kf2.states[2][0].value,
+                       kf2.states[0].size(), 0, 0, sizeof(Real));
     }
 
     ImPlot::EndPlot();

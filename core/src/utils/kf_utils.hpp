@@ -134,11 +134,21 @@ bool drawMatrix(const char *id, EigenVecOrMatrix &mat,
           ImGui::PopStyleColor();
         } else {
           ImGui::SetNextItemWidth(120);
+          if (col == row && mat.rows() > 1) {
+            ImGui::PushStyleColor(
+                ImGuiCol_Text,
+                ImVec4(254.0f / 255.0f, 107.0f / 255.0f, 0.0f, 1.000f));
+            // ImGui::PushStyleColor(ImGuiCol_Text,
+            //                       ImVec4(1.000f, 0.494f, 0.157f, 1.000f));
+          }
           if (ImGui::InputDouble("##cell", &mat(row, col), 0.1, 1.0, "%0.6f")) {
             modified = true;
+            if (mat.cols() == mat.rows()) {
+              mat(col, row) = mat(row, col);
+            }
           }
-          if (mat.cols() == mat.rows()) {
-            mat(col, row) = mat(row, col);
+          if (col == row && mat.rows() > 1) {
+            ImGui::PopStyleColor();
           }
         }
         ImGui::PopID();
@@ -162,17 +172,23 @@ inline bool drawKFData(KFData &kfData) {
   }
 
   if (ImGui::CollapsingHeader("Matrices")) {
-    kfModified |= drawMatrix("Initial State", kfData.X0, kfData.statesNames,
-                             {reg.x / 4.0f, 0.0f});
-    ImGui::SameLine();
-    kfModified |= drawMatrix("Initial State Cov", kfData.P0, kfData.statesNames,
-                             {reg.x / 4.0f, 0.0f});
-    ImGui::SameLine();
-    kfModified |= drawMatrix("Process Cov", kfData.Q, kfData.statesNames,
-                             {reg.x / 4.0f, 0.0f});
-    ImGui::SameLine();
-    kfModified |= drawMatrix("Measurement Cov", kfData.R,
-                             kfData.measurementsNames, {reg.x / 4.0f, 0.0f});
+    if (ImGui::TreeNode("Initial conditions")) {
+      kfModified |= drawMatrix("Initial State", kfData.X0, kfData.statesNames,
+                               {reg.x / 2.0f, reg.y / 3});
+      ImGui::SameLine();
+      kfModified |= drawMatrix("Initial State Cov", kfData.P0,
+                               kfData.statesNames, {reg.x / 2.0f, reg.y / 3});
+      ImGui::TreePop();
+    }
+    if (ImGui::TreeNode("Parameters")) {
+      kfModified |= drawMatrix("Process Cov", kfData.Q, kfData.statesNames,
+                               {reg.x / 2.0f, reg.y / 3});
+      ImGui::SameLine();
+      kfModified |=
+          drawMatrix("Measurement Cov", kfData.R, kfData.measurementsNames,
+                     {reg.x / 2.0f, reg.y / 3});
+      ImGui::TreePop();
+    }
   }
 
   return kfModified;
