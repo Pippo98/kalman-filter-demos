@@ -182,8 +182,12 @@ void Demo3::runKF(SimulationData &sim) {
     }
     kf.calculateResiduals("x", data[1]);
     kf.calculateResiduals("y", data[2]);
+    kf.calculateResiduals("vx", data[3]);
+    kf.calculateResiduals("vy", data[4]);
     kf2.calculateResiduals("x", data[1]);
     kf2.calculateResiduals("y", data[2]);
+    kf2.calculateResiduals("vx", data[3]);
+    kf2.calculateResiduals("vy", data[4]);
   }
 }
 void Demo3::draw(SimulationData &sim) {
@@ -228,6 +232,7 @@ void Demo3::draw(SimulationData &sim) {
                          sim.simulation.data[0].size(), 0, 0, sizeof(Real));
 
         plotKFState("kf1", "x", kf);
+        plotKFState("kf2", "x", kf2);
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("State Y")) {
@@ -238,6 +243,7 @@ void Demo3::draw(SimulationData &sim) {
                          sim.simulation.data[0].size(), 0, 0, sizeof(Real));
 
         plotKFState("kf1", "y", kf);
+        plotKFState("kf2", "y", kf2);
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("Covariances X")) {
@@ -251,6 +257,7 @@ void Demo3::draw(SimulationData &sim) {
 
         if (showCov) {
           plotKFCovariance("kf1", "x", kf);
+          plotKFCovariance("kf2", "x", kf2);
         }
 
         if (showRes) {
@@ -258,6 +265,9 @@ void Demo3::draw(SimulationData &sim) {
           ImPlot::PlotLine("res kf1.x", &kf.states[0][0].value,
                            &kf.residuals["x"][0].value, kf.states[0].size(), 0,
                            0, sizeof(Real));
+          ImPlot::PlotLine("res kf2.x", &kf2.states[0][0].value,
+                           &kf2.residuals["x"][0].value, kf2.states[0].size(),
+                           0, 0, sizeof(Real));
         }
 
         ImPlot::EndPlot();
@@ -273,12 +283,93 @@ void Demo3::draw(SimulationData &sim) {
 
         if (showCov) {
           plotKFCovariance("kf1", "y", kf);
+          plotKFCovariance("kf2", "y", kf2);
         }
         if (showRes) {
           ImPlot::SetAxis(ImAxis_Y2);
           ImPlot::PlotLine("res kf1.y", &kf.states[0][0].value,
                            &kf.residuals["y"][0].value, kf.states[0].size(), 0,
                            0, sizeof(Real));
+          ImPlot::PlotLine("res kf2.y", &kf2.states[0][0].value,
+                           &kf2.residuals["y"][0].value, kf2.states[0].size(),
+                           0, 0, sizeof(Real));
+        }
+        ImPlot::EndPlot();
+      }
+
+      ImPlot::EndSubplots();
+    }
+    if (ImPlot::BeginSubplots("Velocity States and Covariances", 2, 2, reg,
+                              ImPlotSubplotFlags_LinkAllX)) {
+      if (ImPlot::BeginPlot("State Vx")) {
+        ImPlot::SetupAxes("time", "velocity");
+        ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+        ImPlot::PlotLine("real vx", &sim.simulation.data[0][0].value,
+                         &sim.simulation.data[3][0].value,
+                         sim.simulation.data[0].size(), 0, 0, sizeof(Real));
+
+        plotKFState("kf1", "vx", kf);
+        plotKFState("kf2", "vx", kf2);
+        ImPlot::EndPlot();
+      }
+      if (ImPlot::BeginPlot("State vy")) {
+        ImPlot::SetupAxes("time", "velocity");
+        ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
+        ImPlot::PlotLine("real vy", &sim.simulation.data[0][0].value,
+                         &sim.simulation.data[4][0].value,
+                         sim.simulation.data[0].size(), 0, 0, sizeof(Real));
+
+        plotKFState("kf1", "vy", kf);
+        plotKFState("kf2", "vy", kf2);
+        ImPlot::EndPlot();
+      }
+      if (ImPlot::BeginPlot("Covariances ")) {
+        ImPlot::SetupAxis(ImAxis_X1, "time");
+        if (showCov) {
+          ImPlot::SetupAxis(ImAxis_Y1, "cov");
+        }
+        if (showRes) {
+          ImPlot::SetupAxis(ImAxis_Y2, "residuals");
+        }
+
+        if (showCov) {
+          plotKFCovariance("kf1", "vx", kf);
+          plotKFCovariance("kf2", "vx", kf2);
+        }
+
+        if (showRes) {
+          ImPlot::SetAxis(ImAxis_Y2);
+          ImPlot::PlotLine("res kf1.vx", &kf.states[0][0].value,
+                           &kf.residuals["x"][0].value, kf.states[0].size(), 0,
+                           0, sizeof(Real));
+          ImPlot::PlotLine("res kf2.vx", &kf2.states[0][0].value,
+                           &kf2.residuals["x"][0].value, kf2.states[0].size(),
+                           0, 0, sizeof(Real));
+        }
+
+        ImPlot::EndPlot();
+      }
+      if (ImPlot::BeginPlot("Covariances Y")) {
+        ImPlot::SetupAxis(ImAxis_X1, "time");
+        if (showCov) {
+          ImPlot::SetupAxis(ImAxis_Y1, "cov");
+        }
+        if (showRes) {
+          ImPlot::SetupAxis(ImAxis_Y2, "residuals");
+        }
+
+        if (showCov) {
+          plotKFCovariance("kf1", "vy", kf);
+          plotKFCovariance("kf2", "vy", kf2);
+        }
+        if (showRes) {
+          ImPlot::SetAxis(ImAxis_Y2);
+          ImPlot::PlotLine("res kf1.vy", &kf.states[0][0].value,
+                           &kf.residuals["vy"][0].value, kf.states[0].size(), 0,
+                           0, sizeof(Real));
+          ImPlot::PlotLine("res kf2.vy", &kf2.states[0][0].value,
+                           &kf2.residuals["vy"][0].value, kf2.states[0].size(),
+                           0, 0, sizeof(Real));
         }
         ImPlot::EndPlot();
       }
