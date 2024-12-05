@@ -250,6 +250,9 @@ bool Demo4::runKF(SimulationData &sim, int iterations) {
   }
 }
 void Demo4::draw(SimulationData &sim) {
+  if (sim.simulation.data.empty() || sim.simulation.data.front().empty()) {
+    return;
+  }
   // time,
   // accel.x,
   // accel.y,

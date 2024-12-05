@@ -8,7 +8,8 @@
 void loadSimulation(Simulation &simulation) {
   CSV csv;
   if (!csv.open(simulation.getCSVPath(), "r")) {
-    assert(false && "Cannot open file");
+    // assert(false && "Cannot open file");
+    return;
   }
   simulation.data.clear();
   simulation.dataWithNoise.clear();
