@@ -1,8 +1,10 @@
 #include "demo_4.hpp"
 
+#include <iostream>
 #include <memory>
 #include "defines.hpp"
 #include "imgui.h"
+#include <Eigen/LU>
 #include "implot.h"
 #include "models/cart_2d.hpp"
 #include "simulator/simulation_manager.hpp"
@@ -68,6 +70,21 @@ Demo4::Demo4() {
     kfPosSpeedAccel.R(5, 5) = 0.1;
   }
 }
+Eigen::VectorXd kfStateUpdate(const Eigen::VectorXd &state,
+                              const Eigen::VectorXd &input, void *userData) {
+  (void)input;
+  double dt = *(double *)userData;
+  auto newState = state;
+
+  newState(0) = state(2) * cos(state(4)) - state(3) * sin(state(4));
+  newState(1) = state(2) * sin(state(4)) + state(3) * cos(state(4));
+  newState(2) = input(0) + input(2) * state(3);
+  newState(3) = input(1) - input(2) * state(2);
+  newState(4) = input(2);
+
+  newState = state + newState * dt;
+  return newState;
+}
 void Demo4::setupKF() {
   {
     auto &ukfPositionOnly = kfPosOnly.ukf;
@@ -123,22 +140,7 @@ void Demo4::setupKF() {
   {
     auto &ukfPositionSpeedAccel = kfPosSpeedAccel.ukf;
     kfPosSpeedAccel.setMatrices();
-    ukfPositionSpeedAccel.setStateUpdateFunction(
-        [](const Eigen::VectorXd &state, const Eigen::VectorXd &input,
-           void *userData) -> Eigen::VectorXd {
-          (void)input;
-          double dt = *(double *)userData;
-          auto newState = state;
-
-          newState(0) = state(2) * cos(state(4)) - state(3) * sin(state(4));
-          newState(1) = state(2) * sin(state(4)) + state(3) * cos(state(4));
-          newState(2) = input(0) + input(2) * state(3);
-          newState(3) = input(1) - input(2) * state(2);
-          newState(4) = input(2);
-
-          newState = state + newState * dt;
-          return newState;
-        });
+    ukfPositionSpeedAccel.setStateUpdateFunction(kfStateUpdate);
     ukfPositionSpeedAccel.setMeasurementFunction(
         [](const Eigen::VectorXd &state, const Eigen::VectorXd &input,
            void *userData) -> Eigen::VectorXd {
@@ -171,11 +173,23 @@ bool Demo4::runKF(SimulationData &sim, int iterations) {
     startRow = 0;
     endRow = rows;
   }
+
+  static std::vector<Eigen::VectorXd> rts_inputs;
+  static std::vector<Eigen::VectorXd> rts_states_in;
+  static std::vector<Eigen::MatrixXd> rts_stateCovariances_in;
+
   if (startRow == 0) {
     kfPosOnly.clearData();
     kfPosAndSpeed.clearData();
     kfPosSpeedAccel.clearData();
+    smoother = kfPosSpeedAccel;
+    smoother.clearData();
+
+    rts_states_in.clear();
+    rts_stateCovariances_in.clear();
+    rts_inputs.clear();
   }
+
   for (size_t row = startRow; row < endRow; row++) {
     {
       kfPosOnly.ukf.predict();
@@ -230,9 +244,15 @@ bool Demo4::runKF(SimulationData &sim, int iterations) {
         kfPosSpeedAccel.ukf.update(measure);
       }
 
+      rts_inputs.push_back(inputs);
+      rts_states_in.push_back(kfPosSpeedAccel.ukf.getState());
+      rts_stateCovariances_in.push_back(kfPosSpeedAccel.ukf.getCovariance());
+
       kfPosSpeedAccel.addStateAndCovariance(data[0][row]);
     }
   }
+
+  bool finished = false;
   startRow = endRow;
   if (endRow >= rows) {
     startRow = 0;
@@ -244,10 +264,27 @@ bool Demo4::runKF(SimulationData &sim, int iterations) {
     kfPosSpeedAccel.calculateResiduals("x", data[8]);
     kfPosSpeedAccel.calculateResiduals("y", data[9]);
 
-    return true;
-  } else {
-    return false;
+    finished = true;
   }
+
+  if (finished) {
+    std::vector<Eigen::VectorXd> xs = rts_states_in;
+    std::vector<Eigen::MatrixXd> ps = rts_stateCovariances_in;
+
+    double dt = 0.04;
+    smoother.ukf = kfPosSpeedAccel.ukf;
+    smoother.ukf.setUserData(&dt);
+    smoother.ukf.RTSSmoother(xs, ps, rts_inputs);
+
+    double time = 0.0;
+    for (size_t i = 0; i < xs.size(); i++) {
+      smoother.ukf.setState(xs[i]);
+      smoother.ukf.setStateCovariance(ps[i]);
+      smoother.addStateAndCovariance(time);
+      time += 0.04;
+    }
+  }
+  return finished;
 }
 void Demo4::draw(SimulationData &sim) {
   if (sim.simulation.data.empty() || sim.simulation.data.front().empty()) {
@@ -301,6 +338,10 @@ void Demo4::draw(SimulationData &sim) {
       kfModified |= drawKFData(kfPosSpeedAccel);
       ImGui::EndTabItem();
     }
+    if (ImGui::BeginTabItem("RTS smoother")) {
+      kfModified |= drawKFData(smoother);
+      ImGui::EndTabItem();
+    }
     ImGui::EndTabBar();
   }
   if (ImGui::CollapsingHeader("State comparison")) {
@@ -321,6 +362,7 @@ void Demo4::draw(SimulationData &sim) {
         plotKFState("kf1", "x", kfPosOnly);
         plotKFState("kf2", "x", kfPosAndSpeed);
         plotKFState("kf3", "x", kfPosSpeedAccel);
+        plotKFState("smoother", "x", smoother);
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("State Y")) {
@@ -333,6 +375,7 @@ void Demo4::draw(SimulationData &sim) {
         plotKFState("kf1", "y", kfPosOnly);
         plotKFState("kf2", "y", kfPosAndSpeed);
         plotKFState("kf3", "y", kfPosSpeedAccel);
+        plotKFState("smoother", "y", smoother);
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("Covariances X")) {
@@ -404,6 +447,7 @@ void Demo4::draw(SimulationData &sim) {
 
       ImPlot::SetNextLineStyle({1.0f, 1.0f, 1.0f, 1.0f});
       plotKFState("kf3", "u", kfPosSpeedAccel);
+      plotKFState("smoother", "u", smoother);
       auto w_fl = sim.simulation.data[11];
       auto w_fr = sim.simulation.data[12];
       auto w_rl = sim.simulation.data[13];
@@ -492,6 +536,18 @@ void Demo4::draw(SimulationData &sim) {
         ImPlot::PlotScatter("kf3", &kfPosSpeedAccel.states[1][startIndex].value,
                             &kfPosSpeedAccel.states[2][startIndex].value,
                             numElsToPlot, 0, 0, sizeof(Real));
+      }
+    }
+    if (smoother.hasStates()) {
+      if (line) {
+        ImPlot::PlotLine("smoother", &smoother.states[1][startIndex].value,
+                         &smoother.states[2][startIndex].value, numElsToPlot, 0,
+                         0, sizeof(Real));
+      }
+      if (scatter) {
+        ImPlot::PlotScatter("smoother", &smoother.states[1][startIndex].value,
+                            &smoother.states[2][startIndex].value, numElsToPlot,
+                            0, 0, sizeof(Real));
       }
     }
     ImPlot::EndPlot();

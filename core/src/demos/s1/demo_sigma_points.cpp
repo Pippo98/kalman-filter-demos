@@ -36,11 +36,10 @@ void DemoSigmaPoints::draw() {
   drawMatrix("Covariance", covariance, {"x", "y"}, {reg.x / 2.0f, 0.0f});
 
   std::vector<ImVec2> sigma;
-  MerweScaledSigmaPoints sigmaPoints;
+  SigmaPoints sigmaPoints;
   ukf.computeMerweScaledSigmaPoints(state, covariance, sigmaPoints);
-  for (Eigen::Index col = 0; col < sigmaPoints.sigmas.cols(); ++col) {
-    sigma.push_back(
-        {(float)sigmaPoints.sigmas(0, col), (float)sigmaPoints.sigmas(1, col)});
+  for (Eigen::Index col = 0; col < sigmaPoints.cols(); ++col) {
+    sigma.push_back({(float)sigmaPoints(0, col), (float)sigmaPoints(1, col)});
   }
 
   if (ImPlot::BeginPlot("Sigma points sampling", ImVec2(-1, 0),

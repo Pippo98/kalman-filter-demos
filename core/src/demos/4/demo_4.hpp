@@ -25,4 +25,5 @@ class Demo4 : public Simulatable {
   KFData kfPosOnly;
   KFData kfPosAndSpeed;
   KFData kfPosSpeedAccel;
+  KFData smoother;
 };
