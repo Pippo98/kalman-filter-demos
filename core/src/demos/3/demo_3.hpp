@@ -24,6 +24,7 @@ class Demo3 : public Simulatable {
   int updateEvery = 0;
   KFData kf;
   KFData kf2;
+  KFData smoother;
 
   double obstructionCoords[2];
   bool obstructedView = false;

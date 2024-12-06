@@ -145,9 +145,12 @@ void Demo3::runKF(SimulationData &sim) {
 
   kf.clearData();
   kf2.clearData();
+
+  std::vector<Eigen::VectorXd> xs;
+  std::vector<Eigen::MatrixXd> ps;
+  double dt = 0.0;
   for (size_t row = 0; row < rows; row++) {
     {
-      double dt = 0.0;
       if (row > 0) {
         dt = data[0][row] - data[0][row - 1];
       }
@@ -177,18 +180,58 @@ void Demo3::runKF(SimulationData &sim) {
         kf2.ukf.update(measure);
       }
 
+      xs.push_back(kf2.ukf.getState());
+      ps.push_back(kf2.ukf.getCovariance());
+
       kf.addStateAndCovariance(data[0][row]);
       kf2.addStateAndCovariance(data[0][row]);
     }
-    kf.calculateResiduals("x", data[1]);
-    kf.calculateResiduals("y", data[2]);
-    kf.calculateResiduals("vx", data[3]);
-    kf.calculateResiduals("vy", data[4]);
-    kf2.calculateResiduals("x", data[1]);
-    kf2.calculateResiduals("y", data[2]);
-    kf2.calculateResiduals("vx", data[3]);
-    kf2.calculateResiduals("vy", data[4]);
   }
+
+  smoother = kf2;
+  smoother.ukf.setStateConstraintsFunction(
+      [](const Eigen::VectorXd &state, const Eigen::VectorXd &input,
+         void *userData) -> Eigen::VectorXd {
+        (void)input;
+        (void)userData;
+        auto constrainedState = state;
+        auto constr = [](double value) {
+          if (value < 0.0) {
+            return value * 0.7;
+          }
+          return value * 1.0;
+        };
+        // constrainedState(4) = constr(state(4));
+        // constrainedState(5) = constr(state(5));
+        constrainedState(4) = std::max(state(4), 0.0);
+        constrainedState(5) = std::max(state(5), 0.0);
+        // constrainedState(4) = state(4);
+        // constrainedState(5) = state(5);
+        return state;
+      });
+  smoother.clearData();
+  smoother.ukf.setUserData(&dt);
+  smoother.ukf.RTSSmoother(xs, ps, std::vector<Eigen::VectorXd>(xs.size()));
+  double time = 0.0;
+  for (size_t i = 0; i < xs.size(); i++) {
+    time += dt;
+    smoother.ukf.setState(xs[i]);
+    smoother.ukf.setStateCovariance(ps[i]);
+    smoother.addStateAndCovariance(time);
+  }
+
+  kf.calculateResiduals("x", data[1]);
+  kf.calculateResiduals("y", data[2]);
+  kf.calculateResiduals("vx", data[3]);
+  kf.calculateResiduals("vy", data[4]);
+  kf2.calculateResiduals("x", data[1]);
+  kf2.calculateResiduals("y", data[2]);
+  kf2.calculateResiduals("vx", data[3]);
+  kf2.calculateResiduals("vy", data[4]);
+  smoother.calculateResiduals("x", data[1]);
+  smoother.calculateResiduals("y", data[2]);
+  smoother.calculateResiduals("vx", data[3]);
+  smoother.calculateResiduals("vy", data[4]);
 }
 void Demo3::draw(SimulationData &sim) {
   if (!ukfSimulated || lastSimCount != sim.simCount) {
@@ -214,6 +257,10 @@ void Demo3::draw(SimulationData &sim) {
       kfModified |= drawKFData(kf2);
       ImGui::EndTabItem();
     }
+    if (ImGui::BeginTabItem("RTS smoother")) {
+      kfModified |= drawKFData(smoother);
+      ImGui::EndTabItem();
+    }
     ImGui::EndTabBar();
   }
   if (ImGui::CollapsingHeader("State comparison")) {
@@ -233,6 +280,7 @@ void Demo3::draw(SimulationData &sim) {
 
         plotKFState("kf1", "x", kf);
         plotKFState("kf2", "x", kf2);
+        plotKFState("smoother", "x", smoother);
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("State Y")) {
@@ -244,6 +292,7 @@ void Demo3::draw(SimulationData &sim) {
 
         plotKFState("kf1", "y", kf);
         plotKFState("kf2", "y", kf2);
+        plotKFState("smoother", "y", smoother);
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("Covariances X")) {
@@ -258,6 +307,7 @@ void Demo3::draw(SimulationData &sim) {
         if (showCov) {
           plotKFCovariance("kf1", "x", kf);
           plotKFCovariance("kf2", "x", kf2);
+          plotKFCovariance("smoother", "x", smoother);
         }
 
         if (showRes) {
@@ -268,6 +318,9 @@ void Demo3::draw(SimulationData &sim) {
           ImPlot::PlotLine("res kf2.x", &kf2.states[0][0].value,
                            &kf2.residuals["x"][0].value, kf2.states[0].size(),
                            0, 0, sizeof(Real));
+          ImPlot::PlotLine("res smoother.x", &smoother.states[0][0].value,
+                           &smoother.residuals["x"][0].value,
+                           smoother.states[0].size(), 0, 0, sizeof(Real));
         }
 
         ImPlot::EndPlot();
@@ -284,6 +337,7 @@ void Demo3::draw(SimulationData &sim) {
         if (showCov) {
           plotKFCovariance("kf1", "y", kf);
           plotKFCovariance("kf2", "y", kf2);
+          plotKFCovariance("smoother", "y", smoother);
         }
         if (showRes) {
           ImPlot::SetAxis(ImAxis_Y2);
@@ -293,6 +347,9 @@ void Demo3::draw(SimulationData &sim) {
           ImPlot::PlotLine("res kf2.y", &kf2.states[0][0].value,
                            &kf2.residuals["y"][0].value, kf2.states[0].size(),
                            0, 0, sizeof(Real));
+          ImPlot::PlotLine("res smoother.y", &smoother.states[0][0].value,
+                           &smoother.residuals["y"][0].value,
+                           smoother.states[0].size(), 0, 0, sizeof(Real));
         }
         ImPlot::EndPlot();
       }
@@ -310,6 +367,7 @@ void Demo3::draw(SimulationData &sim) {
 
         plotKFState("kf1", "vx", kf);
         plotKFState("kf2", "vx", kf2);
+        plotKFState("smoother", "vx", smoother);
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("State vy")) {
@@ -321,6 +379,7 @@ void Demo3::draw(SimulationData &sim) {
 
         plotKFState("kf1", "vy", kf);
         plotKFState("kf2", "vy", kf2);
+        plotKFState("smoother", "vy", smoother);
         ImPlot::EndPlot();
       }
       if (ImPlot::BeginPlot("Covariances ")) {
@@ -335,16 +394,20 @@ void Demo3::draw(SimulationData &sim) {
         if (showCov) {
           plotKFCovariance("kf1", "vx", kf);
           plotKFCovariance("kf2", "vx", kf2);
+          plotKFCovariance("smoother", "vx", smoother);
         }
 
         if (showRes) {
           ImPlot::SetAxis(ImAxis_Y2);
           ImPlot::PlotLine("res kf1.vx", &kf.states[0][0].value,
-                           &kf.residuals["x"][0].value, kf.states[0].size(), 0,
+                           &kf.residuals["vx"][0].value, kf.states[0].size(), 0,
                            0, sizeof(Real));
           ImPlot::PlotLine("res kf2.vx", &kf2.states[0][0].value,
-                           &kf2.residuals["x"][0].value, kf2.states[0].size(),
+                           &kf2.residuals["vx"][0].value, kf2.states[0].size(),
                            0, 0, sizeof(Real));
+          ImPlot::PlotLine("res smoother.vx", &smoother.states[0][0].value,
+                           &smoother.residuals["vx"][0].value,
+                           smoother.states[0].size(), 0, 0, sizeof(Real));
         }
 
         ImPlot::EndPlot();
@@ -361,6 +424,7 @@ void Demo3::draw(SimulationData &sim) {
         if (showCov) {
           plotKFCovariance("kf1", "vy", kf);
           plotKFCovariance("kf2", "vy", kf2);
+          plotKFCovariance("smoother", "vy", smoother);
         }
         if (showRes) {
           ImPlot::SetAxis(ImAxis_Y2);
@@ -370,6 +434,9 @@ void Demo3::draw(SimulationData &sim) {
           ImPlot::PlotLine("res kf2.vy", &kf2.states[0][0].value,
                            &kf2.residuals["vy"][0].value, kf2.states[0].size(),
                            0, 0, sizeof(Real));
+          ImPlot::PlotLine("res smoother.vy", &smoother.states[0][0].value,
+                           &smoother.residuals["vy"][0].value,
+                           smoother.states[0].size(), 0, 0, sizeof(Real));
         }
         ImPlot::EndPlot();
       }
@@ -410,6 +477,11 @@ void Demo3::draw(SimulationData &sim) {
     if (kf2.hasStates()) {
       ImPlot::PlotLine("kf2", &kf2.states[1][0].value, &kf2.states[2][0].value,
                        kf2.states[0].size(), 0, 0, sizeof(Real));
+    }
+    if (smoother.hasStates()) {
+      ImPlot::PlotLine("smoother", &smoother.states[1][0].value,
+                       &smoother.states[2][0].value, smoother.states[0].size(),
+                       0, 0, sizeof(Real));
     }
 
     ImPlot::EndPlot();
